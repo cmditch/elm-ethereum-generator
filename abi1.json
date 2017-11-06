@@ -1,0 +1,14 @@
+[{
+  "constant":true,
+  "inputs":[],
+  "name":"otherNum",
+  "outputs":[{"name":"","type":"uint256"}],
+  "payable":false,
+  "stateMutability":"view",
+  "type":"function"
+}]
+
+{"type":"constructor","inputs":[{"name":"constructorInt_","type":"int256"},{"name":"constructorString_","type":"string"}],"payable":true,"stateMutability":"payable"},
+{"type":"event","anonymous":false,"inputs":[{"indexed":true,"name":"mathematician","type":"address"},{"indexed":false,"name":"anInt","type":"int256"}],"name":"Add"},
+{"type":"event","anonymous":false,"inputs":[{"indexed":true,"name":"professor","type":"address"},{"indexed":false,"name":"numberz","type":"uint256"},{"indexed":false,"name":"aPrime","type":"int256"}],"name":"Subtract"},
+{"type":"event","anonymous":false,"inputs":[{"indexed":false,"name":"uintArrayLog","type":"uint256[4]"}],"name":"UintArray"}

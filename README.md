@@ -1,2 +1,2 @@
 # elm-web3-contract
-Generate an Elm contract interface from an ABI
+Generate an Elm binding for a solidity smart contract from it's ABI
