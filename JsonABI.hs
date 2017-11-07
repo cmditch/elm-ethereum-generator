@@ -84,7 +84,7 @@ instance FromJSON ContractABI where
 
 readJSON :: String -> IO ()
 readJSON filePath = do
-  d <- (eitherDecode <$> BS.readFile filePath) :: IO (Either String [ContractABI])
+  d <- (eitherDecode <$> BS.readFile filePath) :: IO (Either String ContractABI)
   case d of
     Left err -> putStrLn err
     Right ps -> print ps
