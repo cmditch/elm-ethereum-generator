@@ -1,22 +1,24 @@
-{-# LANGUAGE OverloadedStrings    #-}
-{-# LANGUAGE TemplateHaskell      #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell   #-}
 
 module JsonAbi (
     ContractABI(..)
   , Declaration(..)
   , FunctionArg(..)
   , EventArg(..)
+  , readJSON
   ) where
 
-import qualified Data.Text.Encoding as T
-import qualified Data.Text          as T
-import Data.Monoid ((<>))
-import Data.Text (Text)
-import Data.Aeson.TH
-import Data.Aeson
-import Internal
-import Control.Monad
+import           Control.Monad
+import           Data.Aeson
+import           Data.Aeson.TH
 import qualified Data.ByteString.Lazy as BS
+import           Data.Monoid          ((<>))
+import           Data.Text            (Text)
+import qualified Data.Text            as T
+import qualified Data.Text.Encoding   as T
+import           Internal
+
 
 
 data FunctionArg = FunctionArg
@@ -43,16 +45,16 @@ $(deriveJSON
 
 
 data Declaration
-  = DConstructor  { conInputs :: [FunctionArg]
-                  , conPayable :: Bool
+  = DConstructor  { conInputs          :: [FunctionArg]
+                  , conPayable         :: Bool
                   , conStateMutability :: Text
                   }
 
-  | DFunction     { funName      :: Text
-                  , funConstant  :: Bool
-                  , funInputs    :: [FunctionArg]
-                  , funOutputs   :: [FunctionArg]
-                  , funPayable :: Bool
+  | DFunction     { funName            :: Text
+                  , funConstant        :: Bool
+                  , funInputs          :: [FunctionArg]
+                  , funOutputs         :: [FunctionArg]
+                  , funPayable         :: Bool
                   , funStateMutability :: Text
                   }
 
@@ -61,7 +63,7 @@ data Declaration
                   , eveAnonymous :: Bool
                   }
 
-  | DFallback     { falPayable :: Bool
+  | DFallback     { falPayable         :: Bool
                   , falStateMutability :: Text
                   }
   deriving (Show, Eq, Ord)
@@ -74,7 +76,7 @@ $(deriveJSON (defaultOptions {
     ''Declaration)
 
 
-newtype ContractABI = ContractABI { unABI :: [Declaration] }
+newtype ContractABI = ContractABI [Declaration]
   deriving (Eq, Ord, Show)
 
 
