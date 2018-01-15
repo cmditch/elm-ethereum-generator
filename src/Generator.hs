@@ -22,6 +22,7 @@ import qualified Data.Text.Lazy.Encoding as Text
 import qualified Data.Text.Lazy.IO       as Text
 import           Utils
 
+{-| Types |-}
 
 data FunctionArg = FunctionArg
   { funArgName :: Text
@@ -96,11 +97,10 @@ readJSON filePath = do
 
 
 
---- Generators
+{-| Generators |-}
 
-{-
-  Generate elm-web3 contract from raw and decoded ABI
--}
+
+-- | Generate elm-web3 contract from raw and decoded ABI
 generateAll :: (Text, ContractABI) -> Text
 generateAll (rawABI, ContractABI declarations) = base <> funcs <> events
   where
@@ -117,17 +117,13 @@ generateAll (rawABI, ContractABI declarations) = base <> funcs <> events
     events = ""
 
 
-{-
-  Declare module/contract name
--}
+-- | Declare module/contract name
 generateModuleName :: Text -> Text
 generateModuleName name =
   "module " <> name <> " exposing (..)"
 
 
-{-
-  Declare imports
--}
+-- | Declare imports
 generateImports :: Text
 generateImports = Text.intercalate "\n"
   [ "\n"
@@ -145,9 +141,7 @@ generateImports = Text.intercalate "\n"
   ]
 
 
-{-
-  Declare Abi value
--}
+-- | Declare Abi value
 generateABI :: Text -> Text
 generateABI rawABI = Text.intercalate "\n"
   [ "abi_ : Abi"
@@ -158,9 +152,7 @@ generateABI rawABI = Text.intercalate "\n"
   ]
 
 
-{-
-  Generate Elm type signatures for solidity declaration (funcs, events, constructor)
--}
+-- | Generate Elm type signatures for solidity declaration (funcs, events, constructor)
 generateTypeSig :: Declaration -> Text
 generateTypeSig func@DFunction{} = typeSig
   where
