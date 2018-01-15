@@ -16,10 +16,10 @@ version =
 
 
 main :: IO ()
-main =
-  do  setLocaleEncoding utf8
-      allArgs <- Env.getArgs
-      case allArgs of
+main =  do
+    setLocaleEncoding utf8
+    allArgs <- Env.getArgs
+    case allArgs of
         [] ->
           readJSON "abi.json"
           -- putStrLn "Give me something to work with here... A file name?"

@@ -30,7 +30,7 @@ toUpperFirst (x : xs) = toUpper x : xs
 
 minify :: Text ->  Text
 minify =
-  Text.filter (not . (\c -> c == '\n' || c == '\r' || c == '\t' || isSeparator c))
+    Text.filter (not . (\c -> c == '\n' || c == '\r' || c == '\t' || isSeparator c))
 
 
 -- | Convert Solidity type in ABI to elm-web3 type
@@ -50,9 +50,9 @@ typeCast tipe | Text.isPrefixOf "int" tipe = "BigInt"
 -}
 multiLineRecordType :: [Text] -> Text
 multiLineRecordType fields =
-  "\n    { " <> Text.intercalate "\n    , " fields <> "\n    }"
+    "\n    { " <> Text.intercalate "\n    , " fields <> "\n    }"
 
 -- | { a : String, b : Int }
 singleLineRecordType :: [Text] -> Text
 singleLineRecordType field =
-  "{ " <> Text.intercalate ", " field <> " }"
+    "{ " <> Text.intercalate ", " field <> " }"
