@@ -5,10 +5,9 @@ module Main where
 import           Control.Monad
 import           Data.Aeson
 import qualified Data.ByteString.Lazy as BS
+import           Generator            (readJSON)
 import           GHC.IO.Encoding      (setLocaleEncoding, utf8)
 import qualified System.Environment   as Env
-
-import           JsonAbi              (readJSON)
 
 
 version :: String
@@ -22,7 +21,8 @@ main =
       allArgs <- Env.getArgs
       case allArgs of
         [] ->
-          putStrLn "Give me something to work with here... A file name?"
+          readJSON "abi.json"
+          -- putStrLn "Give me something to work with here... A file name?"
 
         ["--version"] ->
           putStrLn version
