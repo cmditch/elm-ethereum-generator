@@ -1,7 +1,7 @@
 [
   {"type":"constructor","inputs":[{"name":"constructorInt_","type":"int256"},{"name":"constructorString_","type":"string"}],"payable":true,"stateMutability":"payable"},
 	{"type":"function","constant":true,"inputs":[],"name":"otherNum","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view"},
-	{"type":"function","constant":true,"inputs":[{"name":"a","type":"uint256"},{"name":"b","type":"uint256"}],"name":"returnsTwoUnnamed","outputs":[{"name":"","type":"uint256"},{"name":"","type":"string"},{"name":"","type":"string"},{"name":"","type":"string"},{"name":"","type":"string"},{"name":"","type":"string"}],"payable":false,"stateMutability":"pure"},
+	{"type":"function","constant":true,"inputs":[{"name":"a","type":"uint256"},{"name":"b","type":"uint256"}],"name":"returnsTwoUnnamed","outputs":[{"name":"","type":"uint256"},{"name":"","type":"string"}],"payable":false,"stateMutability":"pure"},
 	{"type":"function","constant":false,"inputs":[{"name":"anInt","type":"int256"}],"name":"triggerEvent","outputs":[{"name":"","type":"string"}],"payable":false,"stateMutability":"nonpayable"},
 	{"type":"function","constant":false,"inputs":[],"name":"kill","outputs":[],"payable":false,"stateMutability":"nonpayable"},
 	{"type":"function","constant":true,"inputs":[{"name":"a","type":"uint256"},{"name":"b","type":"uint256"}],"name":"returnsOneNamed","outputs":[{"name":"someNumber","type":"uint256"}],"payable":false,"stateMutability":"pure"},

@@ -20,7 +20,7 @@ import           Data.Text.Lazy          (Text)
 import qualified Data.Text.Lazy          as Text
 import qualified Data.Text.Lazy.Encoding as Text
 import qualified Data.Text.Lazy.IO       as Text
-import           Internal
+import           Utils
 
 
 data FunctionArg = FunctionArg
@@ -164,61 +164,36 @@ generateABI rawABI = Text.intercalate "\n"
 generateTypeSig :: Declaration -> Text
 generateTypeSig func@DFunction{} = typeSig
   where
-    typeSig =
-      funName func
-      <> " : "
-      <> Text.intercalate " -> " (inputs <> outputs)
+    typeSig = funName func
+              <> " : "
+              <> Text.intercalate " -> " (inputs <> outputs)
 
-    inputs =
-      case funInputs func of
-        [] -> []
-        xs -> typeCast . funArgType <$> xs
+    inputs = case funInputs func of
+      [] -> []
+      xs -> typeCast . funArgType <$> xs
 
     outputs = ["Contract.Params " <> o]
       where
         o = case funOutputs func of
             []  -> "()"
             [x] -> typeCast $ funArgType x
-            xs  -> wrapInBrackets $ Text.intercalate ", " (outputRecord <$> indexed xs)
+            xs  -> singleLineRecordType (outputRecord <$> indexed xs)
 
-    outputRecord (n, o) =
-      case funArgName o of
-        -- if output is unNamed, uses var0, var1, ...
-        ""    -> "var" <> textInt <> " : " <> typeCast (funArgType o)
-        oName -> oName <> " : " <> typeCast (funArgType o)
+    outputRecord (n, o) = case funArgName o of
+      -- if output is unNamed, uses var0, var1, ...
+      ""    -> "var" <> textInt <> " : " <> typeCast (funArgType o)
+      oName -> oName <> " : " <> typeCast (funArgType o)
       where
         textInt = Text.pack $ show n
 
-generateTypeSig ctor@DConstructor{} = typeSig
+generateTypeSig ctor@DConstructor{} = "type alias Constructor = " <> typeSig
   where
-    typeSig = "type alias Constructor ="
-              <>"\n    { "
-              <> Text.intercalate "\n    , " fields
-              <> "\n    }"
+    typeSig = case length $ conInputs ctor of
+      0 -> "()"
+      x | x <= 2 -> singleLineRecordType fields
+        | otherwise -> multiLineRecordType fields
 
-    fields = multiLineTypeSig <$> conInputs ctor
+    fields = formatField <$> conInputs ctor
+    formatField arg = funArgName arg <> " : " <> funArgType arg
 
 generateTypeSig _                 = ""
-
-
-multiLineTypeSig :: FunctionArg -> Text
-multiLineTypeSig FunctionArg { funArgName = name, funArgType = tipe } =
-  name <> " : " <> typeCast tipe
-
-
--- Helpers
-
-{-
-  Convert Solidity type in ABI to elm-web3 type
--}
-typeCast :: Text -> Text
-typeCast "string" = "String"
-typeCast "address" = "Address"
-typeCast tipe | Text.isPrefixOf "int" tipe = "BigInt"
-              | Text.isPrefixOf "uint" tipe = "BigInt"
-              | otherwise = tipe <> "-ERROR!"
-
-
-wrapInBrackets :: Text -> Text
-wrapInBrackets t =
-  "{ " <> t <> " }"
