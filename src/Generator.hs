@@ -1,3 +1,4 @@
+{-# LANGUAGE NamedFieldPuns    #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell   #-}
 
@@ -96,7 +97,6 @@ readJSON filePath = do
 
 
 
-
 {-| Generators |-}
 
 
@@ -154,38 +154,42 @@ generateABI rawABI = Text.intercalate "\n"
 
 -- | Generate Elm type signatures for solidity declaration (funcs, events, constructor)
 generateTypeSig :: Declaration -> Text
-generateTypeSig func@DFunction{} = typeSig
+generateTypeSig DFunction { funName, funInputs, funOutputs } = typeSig
   where
-    typeSig = funName func
-              <> " : "
-              <> Text.intercalate " -> " (inputs <> outputs)
+    typeSig = funName <> " : " <> Text.intercalate " -> " (inputs <> outputs)
 
-    inputs = case funInputs func of
+    inputs = case funInputs of
       [] -> []
       xs -> typeCast . funArgType <$> xs
 
     outputs = ["Contract.Params " <> o]
       where
-        o = case funOutputs func of
+        o = case funOutputs of
             []  -> "()"
             [x] -> typeCast $ funArgType x
             xs  -> singleLineRecordType (outputRecord <$> indexed xs)
 
-    outputRecord (n, o) = case funArgName o of
+    outputRecord (n, FunctionArg { funArgName, funArgType }) = case funArgName of
       -- if output is unNamed, uses var0, var1, ...
-      ""    -> "var" <> textInt <> " : " <> typeCast (funArgType o)
-      oName -> oName <> " : " <> typeCast (funArgType o)
+      ""    -> "var" <> textInt <> " : " <> typeCast funArgType
+      oName -> oName <> " : " <> typeCast funArgType
       where
         textInt = Text.pack $ show n
 
-generateTypeSig ctor@DConstructor{} = "type alias Constructor = " <> typeSig
+generateTypeSig DConstructor { conInputs } = "type alias Constructor = " <> typeSig
   where
-    typeSig = case length $ conInputs ctor of
-      0 -> "()"
-      x | x <= 2 -> singleLineRecordType fields
+    fields = fArgToElmType <$> conInputs
+    typeSig = case length conInputs of
+      x | x == 0 -> "()"
+        | x <= 2 -> singleLineRecordType fields
         | otherwise -> multiLineRecordType fields
 
-    fields = formatField <$> conInputs ctor
-    formatField arg = funArgName arg <> " : " <> funArgType arg
-
 generateTypeSig _                 = ""
+
+
+
+-- | Utils
+
+fArgToElmType :: FunctionArg -> Text
+fArgToElmType FunctionArg { funArgName, funArgType } =
+  funArgName <> " : " <> typeCast funArgType
