@@ -8,7 +8,6 @@ module Generator (
   , FunctionArg(..)
   , EventArg(..)
   , readJSON
-  , primes
   ) where
 
 import           Control.Monad
@@ -16,6 +15,7 @@ import           Data.Aeson
 import           Data.Aeson.TH
 import qualified Data.ByteString.Lazy    as BS
 import qualified Data.Char               as Char
+import qualified Data.List               as List
 import           Data.List.Index         (indexed)
 import           Data.Monoid             ((<>))
 import           Data.Text.Lazy          (Text)
@@ -103,18 +103,18 @@ readJSON filePath = do
 
 -- | Generate elm-web3 contract from raw and decoded ABI
 generateAll :: (Text, ContractABI) -> Text
-generateAll (rawABI, ContractABI declarations) = base <> funcs <> events
+generateAll (rawABI, ContractABI declarations) = Text.intercalate "\n" (base <> funcs <> events)
     where
-        base = Text.concat
+        base =
             [ generateModuleName "Test"
             , generateImports
             , generateABI rawABI
             ]
 
         funcs =
-            Text.intercalate "\n\n" (generateTypeSig <$> declarations)
+            concatMap (<> ["\n\n"]) (generateFunctions <$> declarations)
 
-        events = ""
+        events = [""]
 
 
 -- | Declare module/contract name
@@ -184,12 +184,138 @@ generateTypeSig DConstructor { conInputs } = "type alias Constructor = " <> type
               | x <= 2 -> singleLineRecordType fields
               | otherwise -> multiLineRecordType fields
 
-generateTypeSig _                 = ""
+generateTypeSig _                         = ""
+
+
+generateFunctions :: Declaration -> [Text]
+generateFunctions func@DFunction { funName, funInputs, funOutputs } =
+    [generateTypeSig func] <> fDeclare <> funcBody
+    where
+        fDeclare =
+            [funName <> paramLetters funInputs <> "="]
+
+        decoderBlock =
+            case funOutputs of
+                []  -> "decoder =" : [indents 1 "Decode.succeed ()"]
+                [x] -> "decoder =" : [indents 1 $ getElmDecoder $ funArgType x]
+                xs  -> "decoder =" : (indents 1 <$> complexDecoder xs)
+
+        funcBody =
+            indents 1 <$> wrapInLet decoderBlock ["Nothing"]
+
+generateFunctions _ = [""]
+
+
+complexDecoder :: [FunctionArg] -> [Text]
+complexDecoder outputs =
+    let
+        decoderPipline = toPipeLineText <$> formattedForPipleline
+
+        decoderFunction =
+            "decode (\\"
+            <> (Text.intercalate " " $ fVarNames outputs)
+            <> " -> { "
+            <> (Text.intercalate ", " $ (\v -> v <> " = " <> v) <$> fVarNames outputs)
+            <> " })"
+
+        toPipeLineText (name, decoder) =
+            "|> required \"" <> name <> "\" " <> decoder
+
+        formattedForPipleline =
+            zip (fVarDecoderNames outputs) (getElmDecoder . funArgType <$> outputs)
+
+    in
+        [ decoderFunction ] <> map (indents 1) decoderPipline
 
 
 
--- | Utils
+{-|  Utils  |-}
 
+
+-- | " someInputOrOutput : BigInt "
 fArgToElmType :: FunctionArg -> Text
 fArgToElmType FunctionArg { funArgName, funArgType } =
     funArgName <> " : " <> typeCast funArgType
+
+
+-- | ["0", "1", ...] or ["userAddress", "voteCount"]
+fVarDecoderNames :: [FunctionArg] -> [Text]
+fVarDecoderNames funcs =
+    rename <$> indexed (funArgName <$> funcs)
+    where
+        rename (index, "")   = Text.pack $ show index
+        rename (index, name) = name
+
+
+-- | ["var0", "var1", ...] or ["userAddress", "voteCount"]
+fVarNames :: [FunctionArg] -> [Text]
+fVarNames funcs =
+    rename <$> indexed (funArgName <$> funcs)
+    where
+        rename (index, "")   = "var" <> (Text.pack $ show index)
+        rename (index, name) = name
+
+
+-- | " transfer(address,uint256) "
+methodName :: Declaration -> Text
+methodName DFunction { funName, funInputs } =
+    funName
+    <> "("
+    <> Text.intercalate "," (funArgType <$> funInputs)
+    <> ")"
+
+
+-- | Creates param names for Elm function declarations
+-- | EVM only allows for 16 inputs I believe, Elm compiler will fail if inputs > 16 due to "!" safegaurd
+paramLetters :: [FunctionArg] -> Text
+paramLetters args =
+    Text.chunksOf 1 "abcdefghijklmnop!"
+        |> take (length args)
+        |> Text.intercalate " "
+        |> addSpaces
+
+
+addSpaces :: Text -> Text
+addSpaces t =
+    " " <> t <> " "
+
+
+wrapInLet :: [Text] -> [Text] -> [Text]
+wrapInLet theLet theIn =
+    ["let"]
+    <> (indents 1 <$> theLet)
+    <> ["in"]
+    <> (indents 1 <$> theIn)
+
+
+-- | Convert Solidity type in ABI to elm-web3 type
+typeCast :: Text -> Text
+typeCast "string" = "String"
+typeCast "address" = "Address"
+typeCast tipe | Text.isPrefixOf "int" tipe = "BigInt"
+              | Text.isPrefixOf "uint" tipe = "BigInt"
+              | otherwise = tipe <> "-ERROR!"
+
+
+getElmDecoder :: Text -> Text
+getElmDecoder "string" = "string"
+getElmDecoder "address" = "addressDecoder"
+getElmDecoder tipe | Text.isPrefixOf "int" tipe = "bigIntDecoder"
+                   | Text.isPrefixOf "uint" tipe = "bigIntDecoder"
+                   | otherwise = tipe <> "-ERROR!"
+
+
+{-
+    { a : String
+    , b : Int
+    , c : Bool
+    }
+-}
+multiLineRecordType :: [Text] -> Text
+multiLineRecordType fields =
+    "\n    { " <> Text.intercalate "\n    , " fields <> "\n    }"
+
+-- | { a : String, b : Int }
+singleLineRecordType :: [Text] -> Text
+singleLineRecordType field =
+    "{ " <> Text.intercalate ", " field <> " }"
