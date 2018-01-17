@@ -2,6 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell   #-}
 
+
 module Generator (
     ContractABI(..)
   , Declaration(..)
@@ -128,14 +129,14 @@ generateImports :: Text
 generateImports = Text.intercalate "\n"
     [ "\n"
     , "import BigInt exposing (BigInt)"
-    , "import Json.Decode as Decode exposing (Decoder, int, string)"
-    , "import Json.Decode.Pipeline exposing (decode, required, optional)"
-    , "import Json.Encode as Encode exposing (Value)"
+    , "import Json.Decode as Decode exposing (Decoder, int, string, bool)"
+    , "import Json.Decode.Pipeline exposing (decode, required)"
+    , "import Json.Encode as Encode"
     , "import Web3.Types exposing (..)"
     , "import Web3"
     , "import Web3.Eth.Contract as Contract"
     , "import Web3.Eth as Eth"
-    , "import Web3.Decoders exposing (..)"
+    , "import Web3.Decoders exposing (bigIntDecoder, eventLogDecoder, addressDecoder, hexDecoder, addressToString, hexToString)"
     , "import Task exposing (Task)"
     , "\n\n"
     ]
@@ -171,7 +172,7 @@ generateTypeSig DFunction { funName, funInputs, funOutputs } = typeSig
 
         outputRecord (n, FunctionArg { funArgName, funArgType }) = case funArgName of
             -- if output is unNamed, uses var0, var1, ...
-            ""    -> "var" <> textInt <> " : " <> typeCast funArgType
+            ""    -> "v" <> textInt <> " : " <> typeCast funArgType
             oName -> oName <> " : " <> typeCast funArgType
             where
               textInt = Text.pack $ show n
@@ -189,19 +190,52 @@ generateTypeSig _                         = ""
 
 generateFunctions :: Declaration -> [Text]
 generateFunctions func@DFunction { funName, funInputs, funOutputs } =
-    [generateTypeSig func] <> fDeclare <> funcBody
+    [generateTypeSig func] <> fDeclare <> (indents 1 <$> funcBody)
     where
+        renamedInputsArgs =
+            renameInputs funInputs
+
+        inputParamNames =
+            case funInputs of
+                [] -> ""
+                _  -> " " <> Text.intercalate " " (funArgName <$> renamedInputsArgs)
+
         fDeclare =
-            [funName <> paramLetters funInputs <> "="]
+            [ funName <> inputParamNames <> " =" ]
 
         decoderBlock =
-            case funOutputs of
-                []  -> "decoder =" : [indents 1 "Decode.succeed ()"]
-                [x] -> "decoder =" : [indents 1 $ getElmDecoder $ funArgType x]
-                xs  -> "decoder =" : (indents 1 <$> complexDecoder xs)
+            "decoder =" : (indents 1 <$> complexDecoder funOutputs)
+
+        methodName =
+            "\"" <> elmMethodName func <> "\""
+
+        inputEncoders =
+            Text.intercalate ", " (inputEncoder <$> renamedInputsArgs)
+
+        inputEncoder FunctionArg { funArgName, funArgType } =
+            getElmEncoder funArgType <> " " <>  funArgName
+
+        paramsField =
+            case funInputs of
+                [] -> "[]"
+                _  -> "List.map Encode.string [ " <> inputEncoders <> " ]"
+
+        paramReturn decoderVal =
+            [ "{ abi = abi_"
+            , ", gasPrice = Just (BigInt.fromInt 300000000)"
+            , ", gas = Just 300000"
+            , ", methodName = Just " <> methodName
+            , ", data = Nothing"
+            , ", params = " <> paramsField
+            , ", decoder = " <> decoderVal
+            , "}"
+            ]
 
         funcBody =
-            indents 1 <$> wrapInLet decoderBlock ["Nothing"]
+            case funOutputs of
+                []  -> paramReturn "Decode.succeed ()"
+                [x] -> paramReturn $ getElmDecoder $ funArgType x
+                xs  -> wrapInLet decoderBlock (paramReturn "decoder")
 
 generateFunctions _ = [""]
 
@@ -209,21 +243,24 @@ generateFunctions _ = [""]
 complexDecoder :: [FunctionArg] -> [Text]
 complexDecoder outputs =
     let
-        decoderPipline = toPipeLineText <$> formattedForPipleline
+        varNames =
+            funArgName <$> renameOutputs outputs
 
         decoderFunction =
             "decode (\\"
-            <> (Text.intercalate " " $ fVarNames outputs)
+            <> Text.intercalate " " varNames
             <> " -> { "
-            <> (Text.intercalate ", " $ (\v -> v <> " = " <> v) <$> fVarNames outputs)
+            <> Text.intercalate ", " ((\v -> v <> " = " <> v) <$> varNames)
             <> " })"
-
-        toPipeLineText (name, decoder) =
-            "|> required \"" <> name <> "\" " <> decoder
 
         formattedForPipleline =
             zip (fVarDecoderNames outputs) (getElmDecoder . funArgType <$> outputs)
 
+        toPipeLineText (name, decoder) =
+            "|> required \"" <> name <> "\" " <> decoder
+
+        decoderPipline =
+            toPipeLineText <$> formattedForPipleline
     in
         [ decoderFunction ] <> map (indents 1) decoderPipline
 
@@ -231,6 +268,8 @@ complexDecoder outputs =
 
 {-|  Utils  |-}
 
+varAlphabet =
+    ['a' .. 'p'] <> "!"
 
 -- | " someInputOrOutput : BigInt "
 fArgToElmType :: FunctionArg -> Text
@@ -248,36 +287,31 @@ fVarDecoderNames funcs =
 
 
 -- | ["var0", "var1", ...] or ["userAddress", "voteCount"]
-fVarNames :: [FunctionArg] -> [Text]
-fVarNames funcs =
-    rename <$> indexed (funArgName <$> funcs)
+renameOutputs :: [FunctionArg] -> [FunctionArg]
+renameOutputs funcs = rename <$> indexed funcs
     where
-        rename (index, "")   = "var" <> (Text.pack $ show index)
-        rename (index, name) = name
+        rename (index, FunctionArg { funArgName, funArgType }) =
+            case funArgName of
+                "" -> FunctionArg ("v" <> Text.pack (show index)) (typeCast funArgType)
+                _ -> FunctionArg funArgName (typeCast funArgType)
+
+
+renameInputs :: [FunctionArg] -> [FunctionArg]
+renameInputs funcs = rename <$> indexed funcs
+    where
+        rename (index, FunctionArg { funArgName, funArgType }) =
+            case funArgName of
+                "" -> FunctionArg (Text.singleton $ varAlphabet !! index) (typeCast funArgType)
+                _ -> FunctionArg funArgName (typeCast funArgType)
 
 
 -- | " transfer(address,uint256) "
-methodName :: Declaration -> Text
-methodName DFunction { funName, funInputs } =
+elmMethodName :: Declaration -> Text
+elmMethodName DFunction { funName, funInputs } =
     funName
     <> "("
     <> Text.intercalate "," (funArgType <$> funInputs)
     <> ")"
-
-
--- | Creates param names for Elm function declarations
--- | EVM only allows for 16 inputs I believe, Elm compiler will fail if inputs > 16 due to "!" safegaurd
-paramLetters :: [FunctionArg] -> Text
-paramLetters args =
-    Text.chunksOf 1 "abcdefghijklmnop!"
-        |> take (length args)
-        |> Text.intercalate " "
-        |> addSpaces
-
-
-addSpaces :: Text -> Text
-addSpaces t =
-    " " <> t <> " "
 
 
 wrapInLet :: [Text] -> [Text] -> [Text]
@@ -290,19 +324,29 @@ wrapInLet theLet theIn =
 
 -- | Convert Solidity type in ABI to elm-web3 type
 typeCast :: Text -> Text
-typeCast "string" = "String"
 typeCast "address" = "Address"
+typeCast "bool" = "Bool"
+typeCast "string" = "String"
 typeCast tipe | Text.isPrefixOf "int" tipe = "BigInt"
               | Text.isPrefixOf "uint" tipe = "BigInt"
               | otherwise = tipe <> "-ERROR!"
 
 
 getElmDecoder :: Text -> Text
-getElmDecoder "string" = "string"
 getElmDecoder "address" = "addressDecoder"
+getElmDecoder "bool" = "bool"
+getElmDecoder "string" = "string"
 getElmDecoder tipe | Text.isPrefixOf "int" tipe = "bigIntDecoder"
                    | Text.isPrefixOf "uint" tipe = "bigIntDecoder"
                    | otherwise = tipe <> "-ERROR!"
+
+
+getElmEncoder :: Text -> Text
+getElmEncoder "Address" = "addressToString"
+getElmEncoder "Bool"    = "Encode.bool"
+getElmEncoder "String"  = ""
+getElmEncoder "BigInt"  = "BigInt.toString"
+getElmEncoder v         = v <> "-ERROR!"
 
 
 {-
