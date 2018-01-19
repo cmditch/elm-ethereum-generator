@@ -1,8 +1,6 @@
 {-# LANGUAGE NamedFieldPuns    #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-
-
 module Generator (readJSON) where
 
 import           Control.Monad
@@ -16,11 +14,12 @@ import           Data.Text.Lazy          (Text)
 import qualified Data.Text.Lazy          as Text
 import qualified Data.Text.Lazy.Encoding as Text
 import qualified Data.Text.Lazy.IO       as Text
+import           Generator.Converters    (Arg (..))
 import qualified Generator.Converters    as C
 import qualified Generator.ElmLang       as EL
 import qualified Generator.Templates     as T
 import           Types
-import           Utils                   (indent, paramAlphabet)
+import           Utils                   (indent, paramAlphabet, textLowerFirst)
 
 
 readJSON :: String -> IO ()
@@ -38,138 +37,93 @@ doIt (rawABI, ContractABI declarations) = Text.intercalate "\n" fileLines
     where
         fileLines = beginning <> middle <> end
         beginning = T.moduleName "Test" <> T.imports <> T.abi rawABI
-        middle = concatMap (<> ["\n\n"]) (genBody <$> declarations)
+        middle = concatMap (<> ["\n\n"]) (declarationBody <$> List.sort declarations)
         end = T.contractDeployFunc
 
+{- FUNCTIONS -}
 
-genBody :: Declaration -> [Text]
-genBody func@DFunction { funName, funInputs, funOutputs } =
-    genTypeSig func <> fDeclare <> (indent 1 <$> funcBody)
+-- | Generate Elm type signatures for solidity declaration (funcs, events, constructor)
+funcTypeSig :: Declaration -> [Text]
+funcTypeSig DFunction { funName, funInputs, funOutputs } = [ typeSig ]
     where
-        renamedInputsArgs =
-            C.renameInputs funInputs
+        inputs = elmType <$> C.normalize funInputs
+
+        typeSig = funName <> " : " <> Text.intercalate " -> " (inputs <> outputs)
+
+        outputs = ["Contract.Params " <> o]
+            where
+                o = case C.normalize funOutputs of
+                    []  -> "()"
+                    [x] -> elmType x
+                    xs  -> EL.singleLineRecord (C.outputRecord <$> xs)
+
+
+declarationBody :: Declaration -> [Text]
+declarationBody func@DFunction { funName, funInputs, funOutputs } =
+    funcTypeSig func <> fDeclare <> (indent 1 <$> funcBody)
+    where
+        normalizedFunInput = C.normalize funInputs
 
         inputParamNames =
             case funInputs of
                 [] -> ""
-                _  -> " " <> Text.intercalate " " (funArgName <$> renamedInputsArgs)
+                _  -> " " <> Text.intercalate " " (nameAsInput <$> normalizedFunInput)
 
-        fDeclare =
-            [ funName <> inputParamNames <> " =" ]
-
-        decoderBlock =
-            "decoder =" : (indent 1 <$> complexDecoder funOutputs)
-
-        method =
-            "Just \"" <> methodName func <> "\""
+        fDeclare = [ funName <> inputParamNames <> " =" ]
 
         inputEncoders =
-            Text.intercalate ", " (inputEncoder <$> renamedInputsArgs)
+            Text.intercalate ", " (C.inputEncoder <$> normalizedFunInput)
 
-        inputEncoder FunctionArg { funArgName, funArgType } =
-            C.getElmEncoder funArgType <> " " <>  funArgName
-
-        params =
-            case funInputs of
-                [] -> "[]"
-                _  -> "List.map Encode.string [ " <> inputEncoders <> " ]"
-
-        paramRecord =
-            T.paramRecord method params
+        paramRecord = T.paramRecord
+            ("Just " <> C.methodName func)
+            (EL.wrapArray inputEncoders)
 
         funcBody =
-            case funOutputs of
+            case C.normalize funOutputs of
                 []  -> paramRecord "Decode.succeed ()"
-                [x] -> paramRecord (C.getElmDecoder $ funArgType x)
-                xs  -> EL.wrapInLet (complexDecoder xs) (paramRecord "decoder")
-
+                [x] -> paramRecord (decoder x)
+                xs  -> EL.wrapInLet (funcDecoderBlock xs) (paramRecord "decoder")
 
 genBody DConstructor { conInputs } = ["type alias Constructor = " <> typeSig]
     where
-        fields = toType <$> conInputs
+        fields = C.outputRecord <$> C.normalize conInputs
         typeSig = case length conInputs of
             x | x == 0 -> "()"
               | x <= 2 -> EL.singleLineRecord fields
               | otherwise -> EL.multiLineRecord fields
 
+genBody event@DEvent { eveName, eveInputs } = eventOnceTypeSig event <> T.subscribe eveName
+    where
+        a = ""
+
 genBody _ = []
 
 
--- | Generate Elm type signatures for solidity declaration (funcs, events, constructor)
-genTypeSig :: Declaration -> [Text]
-genTypeSig DFunction { funName, funInputs, funOutputs } = [typeSig]
-    where
-        typeSig = funName <> " : " <> Text.intercalate " -> " (inputs <> outputs)
-
-        inputs = case funInputs of
-            [] -> []
-            xs -> C.typeCast . funArgType <$> xs
-
-        outputs = ["Contract.Params " <> o]
-            where
-                o = case funOutputs of
-                    []  -> "()"
-                    [x] -> C.typeCast $ funArgType x
-                    xs  -> EL.singleLineRecord (outputRecord <$> indexed xs)
-
-        outputRecord (n, FunctionArg { funArgName, funArgType }) = case funArgName of
-            -- if output var is unNamed, use v0, v1, ...
-            ""    -> "v" <> textInt <> " : " <> C.typeCast funArgType
-            oName -> oName <> " : " <> C.typeCast funArgType
-            where
-              textInt = Text.pack $ show n
-
-genTypeSig _                         = []
-
-
 -- | Generates decode pipline for multi-value return objects
-complexDecoder :: [FunctionArg] -> [Text]
-complexDecoder outputs =
+funcDecoderBlock :: [Arg] -> [Text]
+funcDecoderBlock outputs =
     let
-        varNames =
-            funArgName <$> C.renameOutputs outputs
+        decoderPipline = toPipeLineText <$> outputs
+
+        varNames = nameAsOutput <$> outputs
 
         decoderFunction =
             "decode (\\"
             <> Text.intercalate " " varNames
             <> " -> { "
-            <> Text.intercalate ", " ((\v -> v <> " = " <> v) <$> varNames)
+            <> Text.intercalate ", "  ((\v -> v <> " = " <> v) . nameAsOutput <$> outputs)
             <> " })"
-            : []
 
-        formattedForPipleline =
-            zip (fVarDecoderNames outputs) (C.getElmDecoder . funArgType <$> outputs)
-
-        toPipeLineText (name, decoder) =
-            "|> required \"" <> name <> "\" " <> decoder
-
-        decoderPipline =
-            toPipeLineText <$> formattedForPipleline
+        toPipeLineText Arg { web3Field, decoder } =
+            "|> required \"" <> web3Field <> "\" " <> decoder
     in
-        ["decoder ="] <> (indent 1 <$> decoderFunction) <> (indent 2 <$> decoderPipline)
+        ["decoder ="] <> [indent 1 decoderFunction] <> (indent 2 <$> decoderPipline)
 
 
-{- HELPERS -}
-
--- | ["0", "1", ...] or ["userAddress", "voteCount"]
--- | Corresponds to how web3.js names fields in return objects
-fVarDecoderNames :: [FunctionArg] -> [Text]
-fVarDecoderNames funcs =
-    rename <$> indexed (funArgName <$> funcs)
-    where
-        rename (index, "")   = Text.pack $ show index
-        rename (index, name) = name
-
-
--- |    "transfer(address,uint256)"
-methodName :: Declaration -> Text
-methodName DFunction { funName, funInputs } =
-    funName
-    <> "("
-    <> Text.intercalate "," (funArgType <$> funInputs)
+eventOnceTypeSig :: Declaration -> [Text]
+eventOnceTypeSig DEvent { eveName, eveInputs } =
+    [  textLowerFirst eveName
+    <> " : Contract.Params (EventLog "
+    <> EL.singleLineRecord (C.outputRecord <$> C.normalize eveInputs)
     <> ")"
-
-
-toType :: FunctionArg -> Text
-toType FunctionArg { funArgName, funArgType } =
-    funArgName <> " : " <> C.typeCast funArgType
+    ]

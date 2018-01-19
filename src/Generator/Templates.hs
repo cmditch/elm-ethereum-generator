@@ -6,12 +6,13 @@ module Generator.Templates
     , abi
     , paramRecord
     , contractDeployFunc
+    , subscribe
     ) where
 
 import           Data.Monoid    ((<>))
 import           Data.Text.Lazy (Text)
 import qualified Data.Text.Lazy as Text
-import           Utils          (minify)
+import           Utils          (indent, minify)
 
 
 -- | Declare module/contract name
@@ -48,7 +49,7 @@ abi rawABI =
     , "\n"
     ]
 
-
+-- | Return type for contract functions
 paramRecord :: Text -> Text -> Text -> [Text]
 paramRecord method params decoder =
     [ "{ abi = abi_"
@@ -62,6 +63,16 @@ paramRecord method params decoder =
     ]
 
 
+-- | Function to subscribe/listen to incoming events
+subscribe :: Text -> [Text]
+subscribe eventName =
+    [ "subscribe" <> eventName <> " : ( Address, EventId ) -> Cmd msg"
+    , "    Contract.subscribe abi_ \"" <> eventName <> "\""
+    ]
+
+
+
+-- | Function to deploy contract if byteCode is supplied
 contractDeployFunc :: [Text]
 contractDeployFunc =
     ["deploy : Address -> Maybe BigInt -> Constructor -> Task Error ContractInfo"

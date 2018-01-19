@@ -2,6 +2,7 @@
 
 module Generator.ElmLang
     ( wrapInLet
+    , wrapArray
     , multiLineRecord
     , singleLineRecord
     ) where
@@ -23,6 +24,11 @@ wrapInLet theLet theIn =
     <> (indent 1 <$> theLet)
     <> ["in"]
     <> (indent 1 <$> theIn)
+
+
+wrapArray :: Text -> Text
+wrapArray "" = "[]"
+wrapArray t  = "[ " <> t <> " ]"
 
 
 -- |

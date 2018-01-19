@@ -1,16 +1,13 @@
-{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell   #-}
 
-module Types
-  ( ContractABI(..)
-  , Declaration(..)
-  , FunctionArg(..)
-  , EventArg(..)
-  ) where
+module Types where
 
 import           Data.Aeson
 import           Data.Aeson.TH
 import           Data.Text.Lazy (Text)
 import           Utils          (toLowerFirst)
+
 
 data FunctionArg = FunctionArg
     { funArgName :: Text
@@ -21,6 +18,7 @@ data FunctionArg = FunctionArg
 $(deriveJSON
     (defaultOptions {fieldLabelModifier = toLowerFirst . drop 6})
     ''FunctionArg)
+
 
 data EventArg = EventArg
     { eveArgName    :: Text
@@ -53,10 +51,11 @@ data Declaration
                     , eveAnonymous :: Bool
                     }
 
-    | DFallback     { falPayable         :: Bool
+    | AFallback     { falPayable         :: Bool
                     , falStateMutability :: Text
                     }
-    deriving (Show, Eq, Ord)
+    deriving (Show, Ord, Eq)
+
 
 
 $(deriveJSON (defaultOptions {

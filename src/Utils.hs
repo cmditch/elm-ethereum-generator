@@ -3,6 +3,7 @@
 module Utils (
     (|>),
     toLowerFirst,
+    textLowerFirst,
     minify,
     indent,
     paramAlphabet
@@ -25,6 +26,11 @@ x |> f = f x
 toLowerFirst :: String -> String
 toLowerFirst []       = []
 toLowerFirst (x : xs) = toLower x : xs
+
+
+-- | Lower first char of string
+textLowerFirst :: Text -> Text
+textLowerFirst t = (Text.singleton . toLower $ Text.head t) <> Text.tail t
 
 
 -- | Remove all spaces, tabs, and newlines

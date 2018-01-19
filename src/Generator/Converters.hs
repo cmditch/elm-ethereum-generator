@@ -1,13 +1,8 @@
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE NamedFieldPuns    #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Generator.Converters
-    ( typeCast
-    , getElmDecoder
-    , getElmEncoder
-    , renameInputs
-    , renameOutputs
-    ) where
+module Generator.Converters where
 
 import           Data.List.Index (indexed)
 import           Data.Monoid     ((<>))
@@ -27,39 +22,88 @@ typeCast tipe | Text.isPrefixOf "int" tipe  = "BigInt"
               | otherwise = tipe <> "-ERROR!"
 
 
--- | Get decoder for solidity type
-getElmDecoder :: Text -> Text
-getElmDecoder "address" = "addressDecoder"
-getElmDecoder "bool"    = "D.bool"
-getElmDecoder "string"  = "D.string"
-getElmDecoder tipe | Text.isPrefixOf "int" tipe = "bigIntDecoder"
-                   | Text.isPrefixOf "uint" tipe = "bigIntDecoder"
-                   | otherwise = tipe <> "-ERROR!"
+-- | Get elm decoder for solidity type
+getDecoder :: Text -> Text
+getDecoder "Address" = "D.addressDecoder"
+getDecoder "Bool"    = "D.bool"
+getDecoder "String"  = "D.string"
+getDecoder "BigInt"  = "D.bigIntDecoder"
+getDecoder v         = v <> "-ERROR!"
 
 
--- | Get enocder for solidity type
-getElmEncoder :: Text -> Text
-getElmEncoder "Address" = "D.string <| addressToString"
-getElmEncoder "Bool"    = "D.string <| E.bool"
-getElmEncoder "String"  = ""
-getElmEncoder "BigInt"  = "D.string <| BI.toString"
-getElmEncoder v         = v <> "-ERROR!"
+-- | Get elm enocder for solidity type
+getEncoder :: Text -> Text
+getEncoder "Address" = "E.encodeAddress"
+getEncoder "Bool"    = "E.bool"
+getEncoder "String"  = "E.string"
+getEncoder "BigInt"  = "E.encodeBigInt"
+getEncoder v         = v <> "-ERROR!"
 
 
--- | ["var0", "var1", ...] or ["userAddress", "voteCount"]
-renameOutputs :: [FunctionArg] -> [FunctionArg]
-renameOutputs funcs = rename <$> indexed funcs
+inputEncoder :: Arg -> Text
+inputEncoder Arg { nameAsInput, encoder } =
+    encoder <> " " <>  nameAsInput
+
+
+-- |    "transfer(address,uint256)"
+methodName :: Declaration -> Text
+methodName DFunction { funName, funInputs } =
+    "\""
+    <> funName
+    <> "("
+    <> Text.intercalate "," (funArgType <$> funInputs)
+    <> ")\""
+methodName _ = ""
+
+
+-- |   "name : String"
+outputRecord :: Arg -> Text
+outputRecord Arg { nameAsOutput, elmType } =
+    nameAsOutput <> " : " <> elmType
+
+
+-- | The below functions/class helps normalize data for unnamed inputs/outputs
+data Arg = Arg  { elmType      :: Text
+                , nameAsInput  :: Text
+                , nameAsOutput :: Text
+                , web3Field    :: Text
+                , decoder      :: Text
+                , encoder      :: Text
+                } deriving (Show, Eq, Ord)
+
+class NormalizedArgs a where
+    normalize  :: a -> [Arg]
+
+
+instance NormalizedArgs [FunctionArg] where
+    normalize args = map (rename . funcTuple) (indexed args)
+
+
+instance NormalizedArgs [EventArg] where
+    normalize args = map (rename . eventTuple) (indexed args)
+
+
+funcTuple :: (Int, FunctionArg) -> (Int, (Text, Text))
+funcTuple (i, FunctionArg { funArgName, funArgType }) = (i, (funArgName, funArgType))
+
+
+eventTuple :: (Int, EventArg) -> (Int, (Text, Text))
+eventTuple (i, EventArg { eveArgName, eveArgType }) = (i, (eveArgName, eveArgType))
+
+
+rename :: (Int, (Text, Text)) -> Arg
+rename (index, (argName, argType)) = case argName of
+    "" ->  Arg type' nInput nOutput indexT decoder encoder
+    _  ->  Arg type' argName argName argName decoder encoder
     where
-        rename (index, FunctionArg { funArgName, funArgType }) =
-            case funArgName of
-                "" -> FunctionArg ("v" <> Text.pack (show index)) (typeCast funArgType)
-                _ -> FunctionArg funArgName (typeCast funArgType)
+        indexT  = Text.pack (show index)
+        type'   = typeCast argType
+        nInput  = alphabetInt index
+        nOutput = "v" <> indexT
+        decoder = getDecoder type'
+        encoder = getEncoder type'
 
 
-renameInputs :: [FunctionArg] -> [FunctionArg]
-renameInputs funcs = rename <$> indexed funcs
-    where
-        rename (index, FunctionArg { funArgName, funArgType }) =
-            case funArgName of
-                "" -> FunctionArg (Text.singleton $ paramAlphabet !! index) (typeCast funArgType)
-                _ -> FunctionArg funArgName (typeCast funArgType)
+alphabetInt :: Int -> Text
+alphabetInt i =
+    Text.singleton $ paramAlphabet !! i
