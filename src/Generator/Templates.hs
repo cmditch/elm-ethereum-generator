@@ -6,7 +6,6 @@ module Generator.Templates
     , abi
     , paramRecord
     , contractDeployFunc
-    , subscribe
     ) where
 
 import           Data.Monoid    ((<>))
@@ -61,15 +60,6 @@ paramRecord method params decoder =
     , ", decoder = " <> decoder
     , "}"
     ]
-
-
--- | Function to subscribe/listen to incoming events
-subscribe :: Text -> [Text]
-subscribe eventName =
-    [ "subscribe" <> eventName <> " : ( Address, EventId ) -> Cmd msg"
-    , "    Contract.subscribe abi_ \"" <> eventName <> "\""
-    ]
-
 
 
 -- | Function to deploy contract if byteCode is supplied

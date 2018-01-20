@@ -3,6 +3,7 @@
 module Generator.ElmLang
     ( wrapInLet
     , wrapArray
+    , comment
     , multiLineRecord
     , singleLineRecord
     ) where
@@ -30,6 +31,10 @@ wrapArray :: Text -> Text
 wrapArray "" = "[]"
 wrapArray t  = "[ " <> t <> " ]"
 
+
+comment :: Text -> [Text]
+comment t =
+    ["{-  " <> t <> " -}"]
 
 -- |
 -- |     { a : String

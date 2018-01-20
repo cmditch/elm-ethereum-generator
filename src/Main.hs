@@ -21,7 +21,7 @@ main =  do
     allArgs <- Env.getArgs
     case allArgs of
         [] ->
-          readJSON "abi.json"
+          readJSON "erc20.json"
           -- putStrLn "Give me something to work with here... A file name?"
 
         ["--version"] ->

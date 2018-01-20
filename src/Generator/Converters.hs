@@ -86,10 +86,8 @@ instance NormalizedArgs [EventArg] where
 funcTuple :: (Int, FunctionArg) -> (Int, (Text, Text))
 funcTuple (i, FunctionArg { funArgName, funArgType }) = (i, (funArgName, funArgType))
 
-
 eventTuple :: (Int, EventArg) -> (Int, (Text, Text))
 eventTuple (i, EventArg { eveArgName, eveArgType }) = (i, (eveArgName, eveArgType))
-
 
 rename :: (Int, (Text, Text)) -> Arg
 rename (index, (argName, argType)) = case argName of
