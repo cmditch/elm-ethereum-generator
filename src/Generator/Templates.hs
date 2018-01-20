@@ -25,14 +25,14 @@ imports :: [Text]
 imports =
     [ "\n"
     , "import BigInt as BI exposing (BigInt)"
-    , "import Json.Decode as D exposing (Decoder, int, string, bool)"
+    , "import Json.Decode as D"
     , "import Json.Decode.Pipeline exposing (decode, required)"
     , "import Json.Encode as E"
     , "import Web3.Types exposing (..)"
     , "import Web3"
     , "import Web3.Eth.Contract as Contract"
     , "import Web3.Eth as Eth"
-    , "import Web3.Decoders exposing (bigIntDecoder, eventLogDecoder, addressDecoder, hexDecoder, addressToString, hexToString)"
+    , "import Web3.Decoders as D"
     , "import Task exposing (Task)"
     , "\n"
     ]

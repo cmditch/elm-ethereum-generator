@@ -26,3 +26,10 @@ executable elm-web3-contract
                        process,
                        text >= 1 && < 2,
                        ilist
+
+  other-modules:       Generator
+                       Generator.Converters
+                       Generator.ElmLang
+                       Generator.Templates
+                       Types
+                       Utils

@@ -9,6 +9,7 @@ import qualified Data.ByteString.Lazy    as BS
 import qualified Data.Char               as Char
 import qualified Data.List               as List
 import           Data.List.Index         (indexed)
+import           Data.Maybe
 import           Data.Monoid             ((<>))
 import           Data.Text.Lazy          (Text)
 import qualified Data.Text.Lazy          as Text
@@ -32,9 +33,9 @@ readJSON filePath = do
 
 
 doIt :: (Text, ContractABI) -> Text
-doIt (rawABI, ContractABI declarations) = Text.intercalate "\n" fileLines
+doIt (rawABI, ContractABI declarations) =
+    Text.intercalate "\n" (imports <> abi <> methodsAndEvents <> contractOps)
     where
-        fileLines = imports <> abi <> methodsAndEvents <> contractOps
         imports = T.moduleName "Test" <> T.imports
         abi = T.abi rawABI
         methodsAndEvents = concatMap (<> ["\n\n"]) (declarationBody <$> List.sort declarations)
@@ -83,9 +84,11 @@ declarationBody func@DFunction { funName, funInputs, funOutputs } =
 
         funcBody =
             case C.normalize funOutputs of
-                []  -> paramRecord "Decode.succeed ()"
+                []  -> paramRecord "D.succeed ()"
                 [x] -> paramRecord (decoder x)
-                xs  -> EL.wrapInLet (decoderBlock xs) (paramRecord "decoder")
+                xs  -> EL.wrapInLet (decoderBlock Nothing xs) (paramRecord "decoder")
+
+{- CONSTRUCTOR -}
 
 declarationBody DConstructor { conInputs } = ["type alias Constructor = " <> typeSig]
     where
@@ -104,14 +107,25 @@ declarationBody event@DEvent{} = concatMap (<> ["\n\n"])
     , eventSubscribe event
     , eventOnceBody event
     , eventDecodeBody event
+    , eventDecoder event
     ]
 
 declarationBody _ = []
 
 
+eventDecoder :: Declaration -> [Text]
+eventDecoder DEvent { eveName, eveInputs } =
+    case C.normalize eveInputs of
+        []  -> [ C.eventDecoderName eveName <> " = D.succeed ()"]
+        [x] -> [ C.eventDecoderName eveName <> decoder x]
+        xs  -> decoderBlock (Just $ C.eventDecoderName eveName) xs
+
+
+
 eventSubscribe :: Declaration -> [Text]
 eventSubscribe DEvent { eveName } =
     [ "subscribe" <> eveName <> " : ( Address, EventId ) -> Cmd msg"
+    , "subscribe" <> eveName <> " ="
     , "    Contract.subscribe abi_ \"" <> eveName <> "\""
     ]
 
@@ -131,11 +145,11 @@ eventOnceBody event@DEvent { eveName, eveInputs } =
     eventOnceTypeSig event <> declare <> (indent 1 <$> body)
     where
         declare = ["once" <> eveName <> " ="]
-        paramRecord = T.paramRecord ("Just " <> eveName) "[]"
+        paramRecord = T.paramRecord ("Just \"" <> eveName <> "\"") "[]"
         body = case C.normalize eveInputs of
-                []  -> paramRecord "Decode.succeed ()"
+                []  -> paramRecord "D.succeed ()"
                 [x] -> paramRecord (decoder x)
-                xs  -> EL.wrapInLet (decoderBlock xs) (paramRecord "decoder")
+                xs  -> paramRecord $ C.eventDecoderName eveName
 
 
 
@@ -157,18 +171,18 @@ eventDecodeBody event@DEvent { eveName, eveInputs } =
 
         pipeline decoderName =
             [ "response"
-            , indent 1 "|> Decode.decodeString " <> decoderName
+            , indent 1 "|> D.decodeString " <> decoderName
             , indent 1 "|> Result.mapError (\\e -> Error e)"
             ]
 
         body = case C.normalize eveInputs of
-            []  -> pipeline "(Decode.succeed ())"
+            []  -> pipeline "(D.succeed ())"
             [x] -> pipeline $ decoder x
-            xs  -> EL.wrapInLet (decoderBlock xs) (pipeline "decoder")
+            xs  -> pipeline $ C.eventDecoderName eveName
 
 
 
-{- encodeContractABI & estimateContractGas -}
+{- CONTRACT OPERATIONS - encodeContractABI & estimateContractGas -}
 
 contractOperations :: Declaration -> [Text]
 contractOperations DConstructor { conInputs } = concatMap (<> ["\n"])
@@ -177,17 +191,17 @@ contractOperations DConstructor { conInputs } = concatMap (<> ["\n"])
         comment' = EL.comment "Contract Helper Functions"
 
         inputs = C.normalize conInputs
-        patternMatchRecord = Text.intercalate ", " (nameAsOutput <$> inputs)
+        patternMatchRecord = EL.singleLineRecord [Text.intercalate ", " (nameAsOutput <$> inputs)]
         encodes = EL.wrapArray $ Text.intercalate ", " (encoder <$> inputs)
-        params = indent 1 <$> T.paramRecord "Nothing" encodes "hexDecoder"
+        params = indent 1 <$> T.paramRecord "Nothing" encodes "E.hexDecoder"
 
         eAbiTypeSig = ["encodeContractABI : Constructor -> Task Error Hex"]
-        eAbideclare = ["encodeContractABI " <> patternMatchRecord ]
+        eAbideclare = ["encodeContractABI " <> patternMatchRecord <> " ="]
         eAbiBody = ["Contract.encodeContractABI"] <> params
         encodeAbi = eAbiTypeSig <> eAbideclare <> (indent 1 <$> eAbiBody)
 
         eGasTypeSig = ["estimateContractGas : Constructor -> Task Error Int"]
-        eGasdeclare = ["estimateContractGas " <> patternMatchRecord ]
+        eGasdeclare = ["estimateContractGas " <> patternMatchRecord <> " ="]
         eGasBody = ["Contract.estimateContractGas"] <> params
         eGas = eGasTypeSig <> eGasdeclare <> (indent 1 <$> eGasBody)
 
@@ -195,8 +209,8 @@ contractOperations _ = []
 
 
 -- | Generates decode pipline for multi-value return objects
-decoderBlock :: [Arg] -> [Text]
-decoderBlock outputs =
+decoderBlock :: Maybe Text -> [Arg] -> [Text]
+decoderBlock name outputs =
     let
         decoderPipline = toPipeLineText <$> outputs
 
@@ -212,4 +226,4 @@ decoderBlock outputs =
         toPipeLineText Arg { web3Field, decoder } =
             "|> required \"" <> web3Field <> "\" " <> decoder
     in
-        ["decoder ="] <> [indent 1 decoderFunction] <> (indent 2 <$> decoderPipline)
+        [fromMaybe "decoder" name <> " ="] <> [indent 1 decoderFunction] <> (indent 2 <$> decoderPipline)

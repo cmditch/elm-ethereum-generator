@@ -9,7 +9,7 @@ import           Data.Monoid     ((<>))
 import           Data.Text.Lazy  (Text)
 import qualified Data.Text.Lazy  as Text
 import           Types
-import           Utils           (paramAlphabet)
+import           Utils           (paramAlphabet, textLowerFirst)
 
 
 -- | Convert Solidity type in ABI to elm-web3 type
@@ -19,6 +19,7 @@ typeCast "bool"     = "Bool"
 typeCast "string"   = "String"
 typeCast tipe | Text.isPrefixOf "int" tipe  = "BigInt"
               | Text.isPrefixOf "uint" tipe = "BigInt"
+              | Text.isPrefixOf "bytes" tipe = "Bytes"
               | otherwise = tipe <> "-ERROR!"
 
 
@@ -28,6 +29,7 @@ getDecoder "Address" = "D.addressDecoder"
 getDecoder "Bool"    = "D.bool"
 getDecoder "String"  = "D.string"
 getDecoder "BigInt"  = "D.bigIntDecoder"
+getDecoder "Bytes"   = "D.bytesDecoder"
 getDecoder v         = v <> "-ERROR!"
 
 
@@ -37,6 +39,7 @@ getEncoder "Address" = "E.encodeAddress"
 getEncoder "Bool"    = "E.bool"
 getEncoder "String"  = "E.string"
 getEncoder "BigInt"  = "E.encodeBigInt"
+getEncoder "Bytes"   = "E.encodeBytes"
 getEncoder v         = v <> "-ERROR!"
 
 
@@ -60,6 +63,11 @@ methodName _ = ""
 outputRecord :: Arg -> Text
 outputRecord Arg { nameAsOutput, elmType } =
     nameAsOutput <> " : " <> elmType
+
+
+eventDecoderName :: Text -> Text
+eventDecoderName t =
+    textLowerFirst t <> "Decoder"
 
 
 -- | The below functions/class helps normalize data for unnamed inputs/outputs
