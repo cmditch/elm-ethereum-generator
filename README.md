@@ -1,10 +1,5 @@
 # elm-web3-contract
-Generate an Elm binding for a solidity smart contract from it's ABI
-Rudimentary reading of ABI is done.
+Generate an [elm-web3](https://github.com/cmditch/elm-web3) binding for an Ethereum smart contract from it's ABI
 
-Open `ghci` and type:  
-```
-:l JsonAbi
-readJSON "abi.json"
-```  
-Voila!
+Example usage:
+`elm-web3-contract some-abi.json src/MyContract.elm`
