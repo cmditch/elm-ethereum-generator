@@ -1,0 +1,37 @@
+{
+  "name": "elm-web3-contract",
+  "version": "0.1.0",
+  "description": "Install elm-web3-contract",
+  "preferGlobal": true,
+  "main": "index.js",
+  "scripts": {
+    "install": "binwrap-install",
+    "test": "binwrap-test",
+    "prepublish": "npm test"
+  },
+  "files": [
+    "index.js",
+    "bin"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cmditch/elm-web3-contract.git"
+  },
+  "keywords": [
+    "elm-web3-contract",
+    "elm-web3",
+    "ethereum"
+  ],
+  "author": "Coury Ditch",
+  "license": "BSD-3-Clause",
+  "bugs": {
+    "url": "https://github.com/cmditch/elm-web3-contract/issues"
+  },
+  "homepage": "https://github.com/cmditch/elm-web3-contract",
+  "bin": {
+    "elm-web3-contract": "bin/elm-web3-contract"
+  },
+  "dependencies": {
+    "binwrap": "^0.1.4"
+  }
+}
