@@ -1,2 +1,5 @@
 .stack-work
 .DS_Store
+bin
+node_modules
+unpacked_bin
