@@ -1,49 +1,35 @@
 {-# LANGUAGE NamedFieldPuns    #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Generator (readJSON) where
+module Generator (generate) where
 
-import           Control.Monad
-import           Data.Aeson              (eitherDecode)
-import qualified Data.ByteString.Lazy    as BS
-import qualified Data.Char               as Char
-import qualified Data.List               as List
-import           Data.List.Index         (indexed)
+import qualified Data.List            as List
 import           Data.Maybe
-import           Data.Monoid             ((<>))
-import           Data.Text.Lazy          (Text)
-import qualified Data.Text.Lazy          as Text
-import qualified Data.Text.Lazy.Encoding as Text
-import qualified Data.Text.Lazy.IO       as Text
-import           Generator.Converters    (Arg (..))
-import qualified Generator.Converters    as C
-import qualified Generator.ElmLang       as EL
-import qualified Generator.Templates     as T
+import           Data.Monoid          ((<>))
+import           Data.Text.Lazy       (Text)
+import qualified Data.Text.Lazy       as Text
+import           Generator.Converters (Arg (..))
+import qualified Generator.Converters as C
+import qualified Generator.ElmLang    as EL
+import qualified Generator.Templates  as T
 import           Types
-import           Utils                   (indent, paramAlphabet, textLowerFirst)
+import           Utils                (getFileName, indent)
 
 
-readJSON :: String -> IO ()
-readJSON filePath = do
-    rawABI <- Text.decodeUtf8 <$> BS.readFile filePath
-    decodedABI <- eitherDecode <$> BS.readFile filePath :: IO (Either String ContractABI)
-    case decodedABI of
-        Left err          -> putStrLn err
-        Right contractAbi -> Text.putStrLn $ doIt (rawABI, contractAbi)
 
-
-doIt :: (Text, ContractABI) -> Text
-doIt (rawABI, ContractABI declarations) =
-    Text.intercalate "\n" (imports <> abi <> methodsAndEvents <> contractOps)
+generate :: (Text, ContractABI, FilePath) -> Text
+generate (rawABI, ContractABI declarations, moduleName) =
+    Text.intercalate "\n" (name <> imports <> abi <> methodsAndEvents <> contractOps)
     where
-        imports = T.moduleName "Test" <> T.imports
+        name = T.moduleName $ getFileName moduleName
+        imports = T.imports
         abi = T.abi rawABI
-        methodsAndEvents = concatMap (<> ["\n\n"]) (declarationBody <$> List.sort declarations)
+        methodsAndEvents = concatMap (<> ["\n"]) (declarationBody <$> List.sort declarations)
         contractOps = concatMap contractOperations declarations
 
 
-{- FUNCTIONS -}
 
+{- FUNCTIONS -}
 
 -- | Generate Elm type signatures for solidity declaration (funcs, events, constructor)
 funcTypeSig :: Declaration -> [Text]
@@ -88,7 +74,9 @@ declarationBody func@DFunction { funName, funInputs, funOutputs } =
                 [x] -> paramRecord (decoder x)
                 xs  -> EL.wrapInLet (decoderBlock Nothing xs) (paramRecord "decoder")
 
+
 {- CONSTRUCTOR -}
+
 
 declarationBody DConstructor { conInputs } = ["type alias Constructor = " <> typeSig]
     where
@@ -102,7 +90,7 @@ declarationBody DConstructor { conInputs } = ["type alias Constructor = " <> typ
 {- EVENTS -}
 
 
-declarationBody event@DEvent{} = concatMap (<> ["\n\n"])
+declarationBody event@DEvent{} = concatMap (<> ["\n"])
     [ EL.comment $ eveName event <> " event"
     , eventSubscribe event
     , eventOnceBody event
@@ -117,7 +105,7 @@ eventDecoder :: Declaration -> [Text]
 eventDecoder DEvent { eveName, eveInputs } =
     case C.normalize eveInputs of
         []  -> [ C.eventDecoderName eveName <> " = D.succeed ()"]
-        [x] -> [ C.eventDecoderName eveName <> decoder x]
+        [x] -> []
         xs  -> decoderBlock (Just $ C.eventDecoderName eveName) xs
 
 
@@ -178,7 +166,7 @@ eventDecodeBody event@DEvent { eveName, eveInputs } =
         body = case C.normalize eveInputs of
             []  -> pipeline "(D.succeed ())"
             [x] -> pipeline $ decoder x
-            xs  -> pipeline $ C.eventDecoderName eveName
+            _   -> pipeline $ C.eventDecoderName eveName
 
 
 
@@ -186,7 +174,7 @@ eventDecodeBody event@DEvent { eveName, eveInputs } =
 
 contractOperations :: Declaration -> [Text]
 contractOperations DConstructor { conInputs } = concatMap (<> ["\n"])
-    [comment', encodeAbi, eGas, T.contractDeployFunc]
+    [comment', encodeAbi, estimateGas, T.contractDeployFunc]
     where
         comment' = EL.comment "Contract Helper Functions"
 
@@ -195,15 +183,15 @@ contractOperations DConstructor { conInputs } = concatMap (<> ["\n"])
         encodes = EL.wrapArray $ Text.intercalate ", " (encoder <$> inputs)
         params = indent 1 <$> T.paramRecord "Nothing" encodes "E.hexDecoder"
 
-        eAbiTypeSig = ["encodeContractABI : Constructor -> Task Error Hex"]
-        eAbideclare = ["encodeContractABI " <> patternMatchRecord <> " ="]
-        eAbiBody = ["Contract.encodeContractABI"] <> params
-        encodeAbi = eAbiTypeSig <> eAbideclare <> (indent 1 <$> eAbiBody)
+        encodeAbiTypeSig = ["encodeContractABI : Constructor -> Task Error Hex"]
+        encodeAbideclare = ["encodeContractABI " <> patternMatchRecord <> " ="]
+        encodeAbiBody = ["Contract.encodeContractABI"] <> params
+        encodeAbi = encodeAbiTypeSig <> encodeAbideclare <> (indent 1 <$> encodeAbiBody)
 
-        eGasTypeSig = ["estimateContractGas : Constructor -> Task Error Int"]
-        eGasdeclare = ["estimateContractGas " <> patternMatchRecord <> " ="]
-        eGasBody = ["Contract.estimateContractGas"] <> params
-        eGas = eGasTypeSig <> eGasdeclare <> (indent 1 <$> eGasBody)
+        estimateGasTypeSig = ["estimateContractGas : Constructor -> Task Error Int"]
+        estimateGasdeclare = ["estimateContractGas " <> patternMatchRecord <> " ="]
+        estimateGasBody = ["Contract.estimateContractGas"] <> params
+        estimateGas = estimateGasTypeSig <> estimateGasdeclare <> (indent 1 <$> estimateGasBody)
 
 contractOperations _ = []
 

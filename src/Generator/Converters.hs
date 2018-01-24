@@ -9,7 +9,7 @@ import           Data.Monoid     ((<>))
 import           Data.Text.Lazy  (Text)
 import qualified Data.Text.Lazy  as Text
 import           Types
-import           Utils           (paramAlphabet, textLowerFirst)
+import           Utils           (paramAlphabet, sanitizeName, textLowerFirst)
 
 
 -- | Convert Solidity type in ABI to elm-web3 type
@@ -100,7 +100,7 @@ eventTuple (i, EventArg { eveArgName, eveArgType }) = (i, (eveArgName, eveArgTyp
 rename :: (Int, (Text, Text)) -> Arg
 rename (index, (argName, argType)) = case argName of
     "" ->  Arg type' nInput nOutput indexT decoder encoder
-    _  ->  Arg type' argName argName argName decoder encoder
+    _  ->  Arg type' (sanitizeName argName) (sanitizeName argName) argName decoder encoder
     where
         indexT  = Text.pack (show index)
         type'   = typeCast argType

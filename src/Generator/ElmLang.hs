@@ -34,7 +34,7 @@ wrapArray t  = "[ " <> t <> " ]"
 
 comment :: Text -> [Text]
 comment t =
-    ["{-  " <> t <> " -}"]
+    ["{- " <> t <> " -}"]
 
 -- |
 -- |     { a : String

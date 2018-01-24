@@ -6,13 +6,15 @@ module Utils (
     textLowerFirst,
     minify,
     indent,
-    paramAlphabet
+    paramAlphabet,
+    getFileName,
+    sanitizeName
     ) where
 
-import           Data.Char      (isSeparator, toLower, toUpper)
+import           Data.Char      (isAlphaNum, isSeparator, toLower, toUpper)
 import           Data.Int       (Int64)
 import           Data.Monoid    ((<>))
-import           Data.Text.Lazy (Text)
+import           Data.Text.Lazy (Text, takeWhileEnd)
 import qualified Data.Text.Lazy as Text
 import           Prelude
 
@@ -51,3 +53,22 @@ indent n t =
 paramAlphabet :: String
 paramAlphabet =
     ['a' .. 'p'] <> "!"
+
+-- | "~/some/path/ERC20.elm" to "ERC20"
+getFileName :: FilePath -> Text
+getFileName name = removeExtension $ splitPaths $ Text.pack name
+    where
+        splitPaths = last . Text.splitOn "/"
+        removeExtension = head . Text.splitOn "."
+
+
+-- | "_someVar" to "someVar"
+sanitizeName :: Text -> Text
+sanitizeName t =
+    let
+        (x:xs) = Text.unpack t
+    in
+        if isAlphaNum x
+        then t
+        else sanitizeName $ Text.pack xs
+

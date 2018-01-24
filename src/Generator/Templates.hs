@@ -23,8 +23,7 @@ moduleName name =
 -- | Elm imports
 imports :: [Text]
 imports =
-    [ "\n"
-    , "import BigInt as BI exposing (BigInt)"
+    [ "import BigInt as BI exposing (BigInt)"
     , "import Json.Decode as D"
     , "import Json.Decode.Pipeline exposing (decode, required)"
     , "import Json.Encode as E"
@@ -44,7 +43,7 @@ abi rawABI =
     [ "abi_ : Abi"
     , "abi_ ="
     , "    Abi"
-    , "    \"\"\"" <> minify rawABI <> "\"\"\""
+    , "        \"\"\"" <> minify rawABI <> "\"\"\""
     , "\n"
     ]
 

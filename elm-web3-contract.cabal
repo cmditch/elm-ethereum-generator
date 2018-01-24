@@ -23,6 +23,8 @@ executable elm-web3-contract
                        directory >= 1.0 && < 2.0,
                        filepath >= 1 && < 2.0,
                        pretty >= 1.0 && < 2.0,
+                       optparse-applicative >= 0.14 && < 0.15,
+                       ansi-wl-pprint >= 0.6.8.1 && < 0.7,
                        process,
                        text >= 1 && < 2,
                        ilist
