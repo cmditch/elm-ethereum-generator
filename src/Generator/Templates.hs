@@ -23,15 +23,16 @@ moduleName name =
 -- | Elm imports
 imports :: [Text]
 imports =
-    [ "import BigInt as BI exposing (BigInt)"
-    , "import Json.Decode as D"
+    [ "import Web3"
+    , "import BigInt as BI exposing (BigInt)"
     , "import Json.Decode.Pipeline exposing (decode, required)"
+    , "import Json.Decode as D"
     , "import Json.Encode as E"
+    , "import Web3.Decoders as D"
+    , "import Web3.Encoders as E"
     , "import Web3.Types exposing (..)"
-    , "import Web3"
     , "import Web3.Eth.Contract as Contract"
     , "import Web3.Eth as Eth"
-    , "import Web3.Decoders as D"
     , "import Task exposing (Task)"
     , "\n"
     ]

@@ -30,6 +30,7 @@ getDecoder "Bool"    = "D.bool"
 getDecoder "String"  = "D.string"
 getDecoder "BigInt"  = "D.bigIntDecoder"
 getDecoder "Bytes"   = "D.bytesDecoder"
+getDecoder "Hex"     = "D.hexDecoder"
 getDecoder v         = v <> "-ERROR!"
 
 
@@ -40,6 +41,7 @@ getEncoder "Bool"    = "E.bool"
 getEncoder "String"  = "E.string"
 getEncoder "BigInt"  = "E.encodeBigInt"
 getEncoder "Bytes"   = "E.encodeBytes"
+getEncoder "Hex"     = "E.encodeHex"
 getEncoder v         = v <> "-ERROR!"
 
 
