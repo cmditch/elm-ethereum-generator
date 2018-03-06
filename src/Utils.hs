@@ -11,10 +11,10 @@ module Utils (
     sanitizeName
     ) where
 
-import           Data.Char      (isAlphaNum, isSeparator, toLower, toUpper)
+import           Data.Char      (isAlphaNum, isSeparator, toLower)
 import           Data.Int       (Int64)
 import           Data.Monoid    ((<>))
-import           Data.Text.Lazy (Text, takeWhileEnd)
+import           Data.Text.Lazy (Text)
 import qualified Data.Text.Lazy as Text
 import           Prelude
 

@@ -48,5 +48,6 @@ multiLineRecord fields =
 
 -- |    { a : String, b : Int }
 singleLineRecord :: [Text] -> Text
-singleLineRecord field =
-    "{ " <> Text.intercalate ", " field <> " }"
+singleLineRecord []     = "_"
+singleLineRecord [""]   = "_"  -- Text.intercalate will output empty string on empty list. Bug started at Generator.contractOperations
+singleLineRecord fields = "{ " <> Text.intercalate ", " fields <> " }"

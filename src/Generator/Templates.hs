@@ -11,7 +11,7 @@ module Generator.Templates
 import           Data.Monoid    ((<>))
 import           Data.Text.Lazy (Text)
 import qualified Data.Text.Lazy as Text
-import           Utils          (indent, minify)
+import           Utils          (minify)
 
 
 -- | Declare module/contract name
