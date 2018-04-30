@@ -28,6 +28,7 @@ imports =
     , "import Web3.Evm.Decode exposing (..)"
     , "import Web3.Evm.Encode as Evm exposing (..)"
     , "import Web3.Utils exposing (keccak256)"
+    , ""
     ]
 
 

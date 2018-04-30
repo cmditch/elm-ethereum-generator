@@ -39,26 +39,27 @@ getEncodingType tipe | Text.isPrefixOf "uint" tipe = "UintE"
                      | otherwise = tipe <> "-ERROR!"
 
 
-inputEncoder :: Arg -> Text
-inputEncoder Arg { nameAsInput, encoding } =
+-- | orders(address,bytes32) == [ AddressE a, BytesE b ]
+callDataEncodings :: Arg -> Text
+callDataEncodings Arg { nameAsInput, encoding } =
     encoding <> " " <>  nameAsInput
 
 
 -- |    "transfer(address,uint256)"
-methodName :: Declaration -> Text
-methodName DFunction { funName, funInputs } =
+methodSignature :: Declaration -> Text
+methodSignature DFunction { funName, funInputs } =
     "\""
     <> funName
     <> "("
     <> Text.intercalate "," (funArgType <$> funInputs)
     <> ")\""
-methodName DEvent { eveName, eveInputs } =
+methodSignature DEvent { eveName, eveInputs } =
     "\""
     <> eveName
     <> "("
     <> Text.intercalate "," (eveArgType <$> eveInputs)
     <> ")\""
-methodName _ = ""
+methodSignature _ = ""
 
 
 -- |   "name : String"

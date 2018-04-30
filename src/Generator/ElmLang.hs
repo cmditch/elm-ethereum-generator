@@ -8,12 +8,14 @@ module Generator.ElmLang
     , comment
     , multiLineRecord
     , singleLineRecord
+    , typeAlias
     ) where
 
-import           Data.Monoid    ((<>))
-import           Data.Text.Lazy (Text)
-import qualified Data.Text.Lazy as Text
-import           Utils          (indent)
+import           Data.Monoid          ((<>))
+import           Data.Text.Lazy       (Text)
+import qualified Data.Text.Lazy       as Text
+import qualified Generator.Converters as C
+import           Utils                (indent)
 
 
 -- | let
@@ -45,7 +47,7 @@ wrapQuotes t = "\"" <> t <> "\""
 
 comment :: Text -> [Text]
 comment t =
-    ["{- " <> t <> " -}"]
+    ["\n{- " <> t <> " -}"]
 
 -- |
 -- |     { a : String
@@ -63,3 +65,15 @@ singleLineRecord :: [Text] -> Text
 singleLineRecord []     = "_"
 singleLineRecord [""]   = "_"  -- Text.intercalate will output empty string on empty list. Bug started at Generator.contractOperations
 singleLineRecord fields = "{ " <> Text.intercalate ", " fields <> " }"
+
+
+-- | Generate type alias if multi-data output
+-- | TODO get rid of newlines by outputting declarationBody properly (see how events are being output)
+typeAlias :: Text -> [C.Arg] -> [Text]
+typeAlias name outputs =
+    case outputs of
+        []  -> []
+        [_] -> []
+        xs  -> [ "type alias " <> name <> " ="
+               <> multiLineRecord (C.outputRecord <$> xs)
+               ]

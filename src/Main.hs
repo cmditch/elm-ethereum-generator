@@ -91,7 +91,7 @@ helpInfo =
       examples =
           linesToDoc
           [ "Examples:"
-          , "  elm-web3-contract StandardToken.sol ERC20.elm"
+          , "  elm-web3-contract abis/StandardTokenAbi.json src/Contract/ERC20.elm"
           ]
 
 

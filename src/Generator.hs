@@ -22,66 +22,189 @@ generate (ContractABI declarations, moduleName) =
     where
         name = T.moduleName $ U.getFileName moduleName
         imports = T.imports
-        methodsAndEvents = concatMap (<> ["\n"]) (declarationBody <$> List.sort declarations)
+        methodsAndEvents = concat (declarationToElm <$> List.sort declarations)
 
 
 
--- | Generate function bodies for each declaration type
+declarationToElm :: Declaration -> [Text]
+declarationToElm func = concatMap (<> ["\n"]) $ filter (not . null)
+    [ decComment func
+    , decBody func
+    , decDecoder func
+    , decTypeAlias func
+    ]
 
-{- FUNCTION -}
 
-declarationBody :: Declaration -> [Text]
-declarationBody func@DFunction { funName, funInputs, funOutputs } =
-    (funcTypeSig func)
-        <> fDeclare
-        <> (U.indent 1 <$> funcBody)
-        <> outputTypeAlias
-        <> outputDecoder
+{-
+
+    Comment Generation
+
+-}
+decComment :: Declaration -> [Text]
+decComment func@DFunction{} = EL.comment $ C.methodSignature func <> " function"
+decComment event@DEvent{}   = EL.comment $ C.methodSignature event <> " event"
+decComment _ = []
+
+
+{-
+
+    Type Alias Generation
+
+-}
+decTypeAlias :: Declaration -> [Text]
+decTypeAlias DEvent { eveName, eveInputs } = EL.typeAlias (U.textUpperFirst eveName) (C.normalize eveInputs)
+decTypeAlias DFunction { funName, funOutputs } =
+    case funOutputs of
+        [] -> []
+        [_] -> []
+        _   -> EL.typeAlias (U.textUpperFirst funName) (C.normalize funOutputs)
+decTypeAlias _ = []
+
+
+{-
+
+    Body Generation
+
+-}
+decBody :: Declaration -> [Text]
+
+-- Function Call
+decBody func@DFunction { funName, funOutputs, funInputs } = sig <> declaration <>  body
+
     where
-        inputs = C.normalize funInputs
+        normalizedInputs = C.normalize funInputs
 
         inputParamNames =
             case funInputs of
                 [] -> " contractAddress"
-                _  -> " contractAddress " <> Text.intercalate " " (nameAsInput <$> inputs)
-
-        fDeclare = [ funName <> inputParamNames <> " =" ]
-
-        inputEncoders =
-            Text.intercalate ", " (C.inputEncoder <$> inputs)
-
-        normalizedOutputs =
-            C.normalize funOutputs
+                _  -> " contractAddress " <> Text.intercalate " " (nameAsInput <$> normalizedInputs)
 
         paramRecord :: Text -> [Text]
         paramRecord = T.callBuilder
-            (C.methodName func)
-            (EL.wrapArray inputEncoders)
+            (C.methodSignature func)
+            (EL.wrapArray $ Text.intercalate ", " (C.callDataEncodings <$> normalizedInputs))
 
-        funcBody =
-            case normalizedOutputs of
-                []  -> paramRecord "Decode.succeed ()"
-                [x] -> paramRecord $ "toElmDecoder " <> decoder x
-                _   -> paramRecord $ funName <> "Decoder"
+        sig = funcTypeSig func
 
-        outputTypeAlias =
-            returnDataTypeAlias (U.textUpperFirst funName) normalizedOutputs
+        declaration = [ funName <> inputParamNames <> " =" ]
 
-        outputDecoder =
-            typeAliasDecoder funName normalizedOutputs
+        body =
+            U.indent 1 <$>
+                case C.normalize funOutputs of
+                    []  -> paramRecord "Decode.succeed ()"
+                    [x] -> paramRecord $ "toElmDecoder " <> decoder x
+                    _   -> paramRecord $ funName <> "Decoder"
 
-{- EVENTS -}
+-- Event LogFilter
+decBody event@DEvent { eveName, eveInputs } = sig <> declaration <> body
+    where
+        indexedTopics = filter (\arg -> isIndexed arg) (C.normalize eveInputs)
 
-declarationBody event@DEvent{} = concatMap (<> ["\n"])
-    [ EL.comment $ eveName event <> " event"
-    , eventLogFilter event
-    , eventDecoder event
-    , eventReturnType event
-    ]
+        typeSigHelper x = "Maybe " <> elmType x <> " ->"
 
-declarationBody _ = []
+        sig =
+            case indexedTopics of
+                [] -> [ U.textLowerFirst eveName <> "Event : Address -> LogFilter" ]
+                _  -> [ U.textLowerFirst eveName <> "Event : Address -> " <> (Text.unwords $ typeSigHelper <$> indexedTopics) <> " LogFilter" ]
+
+        declaration =
+            case indexedTopics of
+                [] -> [ U.textLowerFirst eveName <> "Event contractAddress = " ]
+                _  -> [ U.textLowerFirst eveName <> "Event contractAddress " <> (Text.intercalate " " (nameAsInput <$> indexedTopics)) <> " = " ]
+
+        body = U.indent 1 <$> (T.logFilterBuilder $ topicsBuilder (C.methodSignature event) indexedTopics)
+
+decBody _ = []
 
 
+
+{-
+
+    Decoder Generation
+
+-}
+decDecoder :: Declaration -> [Text]
+
+{-  Function Call Decoder
+
+    someCallDecoder : Decoder SomeCall
+    someCallDecoder =
+        evmDecode SomeEvent
+            |> andMap address
+            |> andMap uint
+            |> toElmDecoder
+-}
+decDecoder DFunction { funName, funOutputs } =
+    let
+        sig = [ funName <> "Decoder : Decoder " <>  U.textUpperFirst funName ]
+
+        declaration = [ funName <> "Decoder =" ]
+
+        decoderPipline = toPipeLineText <$> (C.normalize funOutputs)
+
+        toPipeLineText Arg { decoder } =
+            "|> andMap " <> decoder
+
+        body = [ U.indent 1 ("evmDecode " <> U.textUpperFirst funName) ]
+                <> ( U.indent 2 <$> decoderPipline )
+                <> [ U.indent 2 "|> toElmDecoder" ]
+
+    in
+        case funOutputs of
+            []  -> []
+            [_] -> []
+            _   ->  sig <> declaration <> body
+
+{-  Event Decoder
+
+    someEventDecoder : Decoder SomeEvent
+    someEventDecoder =
+        decode SomeEvent
+            |> custom (topic 1 uint)
+            |> custom (data 0 address)
+-}
+decDecoder DEvent { eveName, eveInputs } =
+    let
+        sig = [ U.textLowerFirst eveName <> "Decoder : Decoder " <> U.textUpperFirst eveName ]
+
+        declaration = [ U.textLowerFirst eveName <> "Decoder = " ]
+
+        body =
+            map (U.indent 1)
+            ([ "decode " <> U.textUpperFirst eveName ] <> eventPipelineBuilder (1,0) (C.normalize eveInputs) [])
+
+        toPipeline tipe n arg = U.indent 1 $
+            "|> custom ("
+                <> tipe <> " "
+                <> (Text.pack $ show n)
+                <> " "
+                <> decoder arg
+                <> ")"
+
+        eventPipelineBuilder :: (Int, Int) -> [Arg] -> [Text] -> [Text]
+        eventPipelineBuilder (topicIndex, dataIndex) args accum =
+            case args of
+                [] ->
+                    reverse accum
+                (x:xs) ->
+                    case isIndexed x of
+                        True ->
+                            eventPipelineBuilder (topicIndex + 1, dataIndex) xs (toPipeline "topic" topicIndex x : accum)
+                        False ->
+                            eventPipelineBuilder (topicIndex, dataIndex + 1) xs (toPipeline "data" dataIndex x : accum)
+    in
+        case eveInputs of
+            [] -> []
+            _  -> sig <> declaration <> body
+
+decDecoder _ = []
+
+
+{-
+
+    HELPERS
+
+-}
 
 -- | Generate Elm type signatures for solidity declaration (funcs, events, constructor)
 funcTypeSig :: Declaration -> [Text]
@@ -97,33 +220,6 @@ funcTypeSig DFunction { funName, funInputs, funOutputs } = [ typeSig ]
                     []  -> "()"
                     [x] -> elmType x
                     _   -> U.textUpperFirst funName
-
-
--- | Generates a type alias which represents the return value of an Ethereum event
-eventReturnType :: Declaration -> [Text]
-eventReturnType DEvent { eveName, eveInputs } =
-    returnDataTypeAlias (U.textUpperFirst eveName) (C.normalize eveInputs)
-
-
--- | Generates an events default LogFilter helper Function
-eventLogFilter :: Declaration -> [Text]
-eventLogFilter event@DEvent { eveName, eveInputs } = [sig, declaration, body]
-    where
-        indexedTopics = filter (\arg -> isIndexed arg) (C.normalize eveInputs)
-
-        typeSigHelper x = "Maybe " <> elmType x <> " ->"
-
-        sig =
-            case indexedTopics of
-                [] -> U.textLowerFirst eveName <> "Event : Address -> LogFilter"
-                _  -> U.textLowerFirst eveName <> "Event : Address -> " <> (Text.unwords $ typeSigHelper <$> indexedTopics) <> " LogFilter"
-
-        declaration =
-            case indexedTopics of
-                [] -> U.textLowerFirst eveName <> "Event contractAddress = "
-                _  -> U.textLowerFirst eveName <> "Event contractAddress " <> (Text.intercalate " " (nameAsInput <$> indexedTopics)) <> " = "
-
-        body = Text.unlines $ U.indent 1 <$> (T.logFilterBuilder $ topicsBuilder (C.methodName event) indexedTopics)
 
 
 -- | Generates the "topics" field within a Logfilter
@@ -143,73 +239,3 @@ topicsBuilder sig args =
         case args of
             [] -> EL.wrapArray defaultTopic
             xs -> EL.multiLineArray $ multiTopic xs
-
-
-{-|  someEventDecoder : Decoder SomeEvent
-     someEventDecoder =
-         decode SomeEvent
-            |> custom (topic 1 uint)
-            |> custom (data 0 address)
--}
-eventDecoder :: Declaration -> [Text]
-eventDecoder DEvent { eveName, eveInputs } = [sig, declaration] <> body
-    where
-        sig = U.textLowerFirst eveName <> "Decoder : Decoder " <> U.textUpperFirst eveName
-
-        declaration = U.textLowerFirst eveName <> "Decoder = "
-
-        body =
-            map (U.indent 1)
-            ([ "decode " <> U.textUpperFirst eveName ] <> eventDecoderHelper (1,0) (C.normalize eveInputs) [])
-
-        toPipeline tipe n arg = U.indent 1 $
-            "|> custom ("
-                <> tipe <> " "
-                <> (Text.pack $ show n)
-                <> " "
-                <> decoder arg
-                <> ")"
-
-        eventDecoderHelper :: (Int, Int) -> [Arg] -> [Text] -> [Text]
-        eventDecoderHelper (topicIndex, dataIndex) args accum =
-            case args of
-                [] ->
-                    reverse accum
-                (x:xs) ->
-                    case isIndexed x of
-                        True ->
-                            eventDecoderHelper (topicIndex + 1, dataIndex) xs (toPipeline "topic" topicIndex x : accum)
-                        False ->
-                            eventDecoderHelper (topicIndex, dataIndex + 1) xs (toPipeline "data" dataIndex x : accum)
-
-
--- | Generate type alias if multi-data output
--- | TODO get rid of newlines by outputting declarationBody properly (see how events are being output)
-returnDataTypeAlias :: Text -> [Arg] -> [Text]
-returnDataTypeAlias name outputs =
-    case outputs of
-        []  -> []
-        [_] -> []
-        xs  -> [ "\n\ntype alias " <> name <> " ="
-               <> EL.multiLineRecord (C.outputRecord <$> xs)
-               ]
-
-
--- | Generates decode pipline for multi-value return objects
-typeAliasDecoder :: Text -> [Arg] -> [Text]
-typeAliasDecoder name outputs =
-    let
-        decoderPipline = toPipeLineText <$> outputs
-
-        toPipeLineText Arg { decoder } =
-            "|> andMap " <> decoder
-    in
-    case outputs of
-        []  -> []
-        [_] -> []
-        _   ->  [ "\n\n" <> name <> "Decoder : Decoder " <>  U.textUpperFirst name ]
-                <> [ name <> "Decoder =" ]
-                <> [ U.indent 1 ("evmDecode " <> U.textUpperFirst name) ]
-                <> ( U.indent 2 <$> decoderPipline )
-                <> [ U.indent 2 "|> toElmDecoder" ]
-
