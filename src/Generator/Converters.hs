@@ -17,6 +17,7 @@ getElmType :: Text -> Text
 getElmType "address"  = "Address"
 getElmType "bool"     = "Bool"
 getElmType tipe | Text.isPrefixOf "uint" tipe = "BigInt"
+                | Text.isPrefixOf "bytes" tipe = "String"
                 | otherwise = tipe <> "-ERROR!"
 
 
@@ -25,6 +26,7 @@ getDecoder :: Text -> Text
 getDecoder "address" = "address"
 getDecoder "bool"    = "bool"
 getDecoder tipe | Text.isPrefixOf "uint" tipe = "uint"
+                | Text.isPrefixOf "bytes" tipe = "bytes"
                 | otherwise = tipe <> "-ERROR!"
 
 
@@ -33,6 +35,7 @@ getEncodingType :: Text -> Text
 getEncodingType "address" = "AddressE"
 getEncodingType "bool"    = "BoolE"
 getEncodingType tipe | Text.isPrefixOf "uint" tipe = "UintE"
+                     | Text.isPrefixOf "bytes" tipe = "BytesE"
                      | otherwise = tipe <> "-ERROR!"
 
 

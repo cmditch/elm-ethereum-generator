@@ -75,7 +75,7 @@ declarationBody func@DFunction { funName, funInputs, funOutputs } =
 
         funcBody =
             case normalizedOutputs of
-                []  -> paramRecord "D.succeed ()"
+                []  -> paramRecord "Decode.succeed ()"
                 [x] -> paramRecord $ "toElmDecoder " <> decoder x
                 _   -> paramRecord $ funName <> "Decoder"
 
@@ -90,15 +90,15 @@ declarationBody func@DFunction { funName, funInputs, funOutputs } =
 declarationBody event@DEvent{} = concatMap (<> ["\n"])
     [ EL.comment $ eveName event <> " event"
     , eventLogFilter event
-    , eventReturnType event
     , eventDecoder event
+    , eventReturnType event
     ]
 
 declarationBody _ = []
 
 
 eventReturnType :: Declaration -> [Text]
-eventReturnType event@DEvent { eveName, eveInputs } =
+eventReturnType DEvent { eveName, eveInputs } =
     returnDataTypeAlias (U.textUpperFirst eveName) (C.normalize eveInputs)
 
 
@@ -111,13 +111,13 @@ eventLogFilter event@DEvent { eveName, eveInputs } = [sig, declaration, body]
 
         sig =
             case indexedTopics of
-                [] -> U.textLowerFirst eveName <> " : LogFilter"
-                _  -> U.textLowerFirst eveName <> " : " <> (Text.unwords $ typeSigHelper <$> indexedTopics) <> " LogFilter"
+                [] -> U.textLowerFirst eveName <> "Event : Address -> LogFilter"
+                _  -> U.textLowerFirst eveName <> "Event : Address -> " <> (Text.unwords $ typeSigHelper <$> indexedTopics) <> " LogFilter"
 
         declaration =
             case indexedTopics of
-                [] -> U.textLowerFirst eveName <> " = "
-                _  -> U.textLowerFirst eveName <> " " <> (Text.intercalate " " (nameAsInput <$> indexedTopics)) <> " = "
+                [] -> U.textLowerFirst eveName <> "Event contractAddress = "
+                _  -> U.textLowerFirst eveName <> "Event contractAddress " <> (Text.intercalate " " (nameAsInput <$> indexedTopics)) <> " = "
 
         body = Text.unlines $ U.indent 1 <$> (T.logFilterBuilder $ topicsBuilder (C.methodName event) indexedTopics)
 
@@ -139,24 +139,30 @@ topicsBuilder sig args =
             xs -> EL.multiLineArray $ multiTopic xs
 
 
-{-  someEventDecoder : Decoder SomeEvent
-    someEventDecoder =
-        decode SomeEvent
+{-|  someEventDecoder : Decoder SomeEvent
+     someEventDecoder =
+         decode SomeEvent
             |> custom (topic 1 uint)
             |> custom (data 0 address)
 -}
 eventDecoder :: Declaration -> [Text]
-eventDecoder DEvent { eveName, eveInputs } = [sig, declaration, Text.unlines body]
+eventDecoder DEvent { eveName, eveInputs } = [sig, declaration] <> body
     where
-        sig = eveName <> "Decoder : Decoder " <> U.textUpperFirst eveName
+        sig = U.textLowerFirst eveName <> "Decoder : Decoder " <> U.textUpperFirst eveName
 
-        declaration = eveName <> "Decoder = "
+        declaration = U.textLowerFirst eveName <> "Decoder = "
 
         body =
             map (U.indent 1)
-            [ "decode " <> U.textUpperFirst eveName ] <> eventDecoderHelper (1,0) (C.normalize eveInputs) []
+            ([ "decode " <> U.textUpperFirst eveName ] <> eventDecoderHelper (1,0) (C.normalize eveInputs) [])
 
-        toPipeline tipe n arg = "|> custom (" <> tipe <> " " <> (Text.pack $ show n) <> " " <> decoder arg
+        toPipeline tipe n arg = U.indent 1 $
+            "|> custom ("
+                <> tipe <> " "
+                <> (Text.pack $ show n)
+                <> " "
+                <> decoder arg
+                <> ")"
 
         eventDecoderHelper :: (Int, Int) -> [Arg] -> [Text] -> [Text]
         eventDecoderHelper (topicIndex, dataIndex) args accum =
@@ -170,6 +176,7 @@ eventDecoder DEvent { eveName, eveInputs } = [sig, declaration, Text.unlines bod
                         False ->
                             eventDecoderHelper (topicIndex, dataIndex + 1) xs (toPipeline "data" dataIndex x : accum)
 
+
 -- | Generate type alias if multi-data output
 -- | TODO get rid of newlines by outputting declarationBody properly (see how events are being output)
 returnDataTypeAlias :: Text -> [Arg] -> [Text]
@@ -179,7 +186,6 @@ returnDataTypeAlias name outputs =
         [_] -> []
         xs  -> [ "\n\ntype alias " <> name <> " ="
                <> EL.multiLineRecord (C.outputRecord <$> xs)
-               <> "\n\n"
                ]
 
 
@@ -195,7 +201,7 @@ typeAliasDecoder name outputs =
     case outputs of
         []  -> []
         [_] -> []
-        _   ->  [ name <> "Decoder : Decoder " <>  U.textUpperFirst name ]
+        _   ->  [ "\n\n" <> name <> "Decoder : Decoder " <>  U.textUpperFirst name ]
                 <> [ name <> "Decoder =" ]
                 <> [ U.indent 1 ("evmDecode " <> U.textUpperFirst name) ]
                 <> ( U.indent 2 <$> decoderPipline )
