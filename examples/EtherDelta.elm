@@ -3,16 +3,14 @@ module EtherDelta exposing (..)
 import BigInt exposing (BigInt)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Decode.Pipeline exposing (custom, decode)
-import Web3.Types exposing (..)
 import Web3.Eth.Types exposing (..)
 import Web3.Evm.Decode exposing (..)
 import Web3.Evm.Encode as Evm exposing (..)
 import Web3.Utils exposing (keccak256)
 
 
-{- "accountLevelsAddr()" function -}
-
-
+{-| "accountLevelsAddr()" function
+-}
 accountLevelsAddr : Address -> Call Address
 accountLevelsAddr contractAddress =
     { to = Just contractAddress
@@ -26,10 +24,8 @@ accountLevelsAddr contractAddress =
     }
 
 
-
-{- "admin()" function -}
-
-
+{-| "admin()" function
+-}
 admin : Address -> Call Address
 admin contractAddress =
     { to = Just contractAddress
@@ -43,10 +39,8 @@ admin contractAddress =
     }
 
 
-
-{- "amountFilled(address,uint256,address,uint256,uint256,uint256,address,uint8,bytes32,bytes32)" function -}
-
-
+{-| "amountFilled(address,uint256,address,uint256,uint256,uint256,address,uint8,bytes32,bytes32)" function
+-}
 amountFilled : Address -> Address -> BigInt -> Address -> BigInt -> BigInt -> BigInt -> Address -> BigInt -> String -> String -> Call BigInt
 amountFilled contractAddress tokenGet amountGet tokenGive amountGive expires nonce user v r s =
     { to = Just contractAddress
@@ -60,10 +54,8 @@ amountFilled contractAddress tokenGet amountGet tokenGive amountGive expires non
     }
 
 
-
-{- "availableVolume(address,uint256,address,uint256,uint256,uint256,address,uint8,bytes32,bytes32)" function -}
-
-
+{-| "availableVolume(address,uint256,address,uint256,uint256,uint256,address,uint8,bytes32,bytes32)" function
+-}
 availableVolume : Address -> Address -> BigInt -> Address -> BigInt -> BigInt -> BigInt -> Address -> BigInt -> String -> String -> Call BigInt
 availableVolume contractAddress tokenGet amountGet tokenGive amountGive expires nonce user v r s =
     { to = Just contractAddress
@@ -77,10 +69,8 @@ availableVolume contractAddress tokenGet amountGet tokenGive amountGive expires 
     }
 
 
-
-{- "balanceOf(address,address)" function -}
-
-
+{-| "balanceOf(address,address)" function
+-}
 balanceOf : Address -> Address -> Address -> Call BigInt
 balanceOf contractAddress token user =
     { to = Just contractAddress
@@ -94,10 +84,8 @@ balanceOf contractAddress token user =
     }
 
 
-
-{- "cancelOrder(address,uint256,address,uint256,uint256,uint256,uint8,bytes32,bytes32)" function -}
-
-
+{-| "cancelOrder(address,uint256,address,uint256,uint256,uint256,uint8,bytes32,bytes32)" function
+-}
 cancelOrder : Address -> Address -> BigInt -> Address -> BigInt -> BigInt -> BigInt -> BigInt -> String -> String -> Call ()
 cancelOrder contractAddress tokenGet amountGet tokenGive amountGive expires nonce v r s =
     { to = Just contractAddress
@@ -111,10 +99,8 @@ cancelOrder contractAddress tokenGet amountGet tokenGive amountGive expires nonc
     }
 
 
-
-{- "changeAccountLevelsAddr(address)" function -}
-
-
+{-| "changeAccountLevelsAddr(address)" function
+-}
 changeAccountLevelsAddr : Address -> Address -> Call ()
 changeAccountLevelsAddr contractAddress accountLevelsAddr_ =
     { to = Just contractAddress
@@ -128,10 +114,8 @@ changeAccountLevelsAddr contractAddress accountLevelsAddr_ =
     }
 
 
-
-{- "changeAdmin(address)" function -}
-
-
+{-| "changeAdmin(address)" function
+-}
 changeAdmin : Address -> Address -> Call ()
 changeAdmin contractAddress admin_ =
     { to = Just contractAddress
@@ -145,10 +129,8 @@ changeAdmin contractAddress admin_ =
     }
 
 
-
-{- "changeFeeAccount(address)" function -}
-
-
+{-| "changeFeeAccount(address)" function
+-}
 changeFeeAccount : Address -> Address -> Call ()
 changeFeeAccount contractAddress feeAccount_ =
     { to = Just contractAddress
@@ -162,10 +144,8 @@ changeFeeAccount contractAddress feeAccount_ =
     }
 
 
-
-{- "changeFeeMake(uint256)" function -}
-
-
+{-| "changeFeeMake(uint256)" function
+-}
 changeFeeMake : Address -> BigInt -> Call ()
 changeFeeMake contractAddress feeMake_ =
     { to = Just contractAddress
@@ -179,10 +159,8 @@ changeFeeMake contractAddress feeMake_ =
     }
 
 
-
-{- "changeFeeRebate(uint256)" function -}
-
-
+{-| "changeFeeRebate(uint256)" function
+-}
 changeFeeRebate : Address -> BigInt -> Call ()
 changeFeeRebate contractAddress feeRebate_ =
     { to = Just contractAddress
@@ -196,10 +174,8 @@ changeFeeRebate contractAddress feeRebate_ =
     }
 
 
-
-{- "changeFeeTake(uint256)" function -}
-
-
+{-| "changeFeeTake(uint256)" function
+-}
 changeFeeTake : Address -> BigInt -> Call ()
 changeFeeTake contractAddress feeTake_ =
     { to = Just contractAddress
@@ -213,10 +189,8 @@ changeFeeTake contractAddress feeTake_ =
     }
 
 
-
-{- "deposit()" function -}
-
-
+{-| "deposit()" function
+-}
 deposit : Address -> Call ()
 deposit contractAddress =
     { to = Just contractAddress
@@ -230,10 +204,8 @@ deposit contractAddress =
     }
 
 
-
-{- "depositToken(address,uint256)" function -}
-
-
+{-| "depositToken(address,uint256)" function
+-}
 depositToken : Address -> Address -> BigInt -> Call ()
 depositToken contractAddress token amount =
     { to = Just contractAddress
@@ -247,10 +219,8 @@ depositToken contractAddress token amount =
     }
 
 
-
-{- "feeAccount()" function -}
-
-
+{-| "feeAccount()" function
+-}
 feeAccount : Address -> Call Address
 feeAccount contractAddress =
     { to = Just contractAddress
@@ -264,10 +234,8 @@ feeAccount contractAddress =
     }
 
 
-
-{- "feeMake()" function -}
-
-
+{-| "feeMake()" function
+-}
 feeMake : Address -> Call BigInt
 feeMake contractAddress =
     { to = Just contractAddress
@@ -281,10 +249,8 @@ feeMake contractAddress =
     }
 
 
-
-{- "feeRebate()" function -}
-
-
+{-| "feeRebate()" function
+-}
 feeRebate : Address -> Call BigInt
 feeRebate contractAddress =
     { to = Just contractAddress
@@ -298,10 +264,8 @@ feeRebate contractAddress =
     }
 
 
-
-{- "feeTake()" function -}
-
-
+{-| "feeTake()" function
+-}
 feeTake : Address -> Call BigInt
 feeTake contractAddress =
     { to = Just contractAddress
@@ -315,10 +279,8 @@ feeTake contractAddress =
     }
 
 
-
-{- "order(address,uint256,address,uint256,uint256,uint256)" function -}
-
-
+{-| "order(address,uint256,address,uint256,uint256,uint256)" function
+-}
 order : Address -> Address -> BigInt -> Address -> BigInt -> BigInt -> BigInt -> Call ()
 order contractAddress tokenGet amountGet tokenGive amountGive expires nonce =
     { to = Just contractAddress
@@ -332,10 +294,8 @@ order contractAddress tokenGet amountGet tokenGive amountGive expires nonce =
     }
 
 
-
-{- "orderFills(address,bytes32)" function -}
-
-
+{-| "orderFills(address,bytes32)" function
+-}
 orderFills : Address -> Address -> String -> Call OrderFills
 orderFills contractAddress a b =
     { to = Just contractAddress
@@ -365,10 +325,8 @@ type alias OrderFills =
     }
 
 
-
-{- "orders(address,bytes32)" function -}
-
-
+{-| "orders(address,bytes32)" function
+-}
 orders : Address -> Address -> String -> Call Bool
 orders contractAddress a b =
     { to = Just contractAddress
@@ -382,10 +340,8 @@ orders contractAddress a b =
     }
 
 
-
-{- "testTrade(address,uint256,address,uint256,uint256,uint256,address,uint8,bytes32,bytes32,uint256,address)" function -}
-
-
+{-| "testTrade(address,uint256,address,uint256,uint256,uint256,address,uint8,bytes32,bytes32,uint256,address)" function
+-}
 testTrade : Address -> Address -> BigInt -> Address -> BigInt -> BigInt -> BigInt -> Address -> BigInt -> String -> String -> BigInt -> Address -> Call Bool
 testTrade contractAddress tokenGet amountGet tokenGive amountGive expires nonce user v r s amount sender =
     { to = Just contractAddress
@@ -399,10 +355,8 @@ testTrade contractAddress tokenGet amountGet tokenGive amountGive expires nonce 
     }
 
 
-
-{- "tokens(address,address)" function -}
-
-
+{-| "tokens(address,address)" function
+-}
 tokens : Address -> Address -> Address -> Call BigInt
 tokens contractAddress a b =
     { to = Just contractAddress
@@ -416,10 +370,8 @@ tokens contractAddress a b =
     }
 
 
-
-{- "trade(address,uint256,address,uint256,uint256,uint256,address,uint8,bytes32,bytes32,uint256)" function -}
-
-
+{-| "trade(address,uint256,address,uint256,uint256,uint256,address,uint8,bytes32,bytes32,uint256)" function
+-}
 trade : Address -> Address -> BigInt -> Address -> BigInt -> BigInt -> BigInt -> Address -> BigInt -> String -> String -> BigInt -> Call ()
 trade contractAddress tokenGet amountGet tokenGive amountGive expires nonce user v r s amount =
     { to = Just contractAddress
@@ -433,10 +385,8 @@ trade contractAddress tokenGet amountGet tokenGive amountGive expires nonce user
     }
 
 
-
-{- "withdraw(uint256)" function -}
-
-
+{-| "withdraw(uint256)" function
+-}
 withdraw : Address -> BigInt -> Call ()
 withdraw contractAddress amount =
     { to = Just contractAddress
@@ -450,10 +400,8 @@ withdraw contractAddress amount =
     }
 
 
-
-{- "withdrawToken(address,uint256)" function -}
-
-
+{-| "withdrawToken(address,uint256)" function
+-}
 withdrawToken : Address -> Address -> BigInt -> Call ()
 withdrawToken contractAddress token amount =
     { to = Just contractAddress
@@ -467,10 +415,8 @@ withdrawToken contractAddress token amount =
     }
 
 
-
-{- "Cancel(address,uint256,address,uint256,uint256,uint256,address,uint8,bytes32,bytes32)" event -}
-
-
+{-| "Cancel(address,uint256,address,uint256,uint256,uint256,address,uint8,bytes32,bytes32)" event
+-}
 cancelEvent : Address -> LogFilter
 cancelEvent contractAddress =
     { fromBlock = LatestBlock
@@ -509,10 +455,8 @@ type alias Cancel =
     }
 
 
-
-{- "Deposit(address,address,uint256,uint256)" event -}
-
-
+{-| "Deposit(address,address,uint256,uint256)" event
+-}
 depositEvent : Address -> LogFilter
 depositEvent contractAddress =
     { fromBlock = LatestBlock
@@ -539,20 +483,18 @@ type alias Deposit =
     }
 
 
-
-{- "Order(address,uint256,address,uint256,uint256,uint256,address)" event -}
-
-
-orderEvent : Address -> Maybe Address -> Maybe BigInt -> Maybe Address -> LogFilter
-orderEvent contractAddress tokenGet amountGet tokenGive =
+{-| "Order(address,uint256,address,uint256,uint256,uint256,address)" event
+-}
+orderEvent : Address -> Maybe Address -> Maybe Address -> Maybe Address -> LogFilter
+orderEvent contractAddress tokenGet tokenGive user =
     { fromBlock = LatestBlock
     , toBlock = LatestBlock
     , address = contractAddress
     , topics =
         [ Just <| keccak256 "Order(address,uint256,address,uint256,uint256,uint256,address)"
         , Maybe.map (Evm.encode << AddressE) tokenGet
-        , Maybe.map (Evm.encode << UintE) amountGet
         , Maybe.map (Evm.encode << AddressE) tokenGive
+        , Maybe.map (Evm.encode << AddressE) user
         ]
     }
 
@@ -561,12 +503,12 @@ orderDecoder : Decoder Order
 orderDecoder =
     decode Order
         |> custom (topic 1 address)
-        |> custom (topic 2 uint)
-        |> custom (topic 3 address)
         |> custom (data 0 uint)
+        |> custom (topic 2 address)
         |> custom (data 1 uint)
         |> custom (data 2 uint)
-        |> custom (data 3 address)
+        |> custom (data 3 uint)
+        |> custom (topic 3 address)
 
 
 type alias Order =
@@ -580,10 +522,8 @@ type alias Order =
     }
 
 
-
-{- "Trade(address,uint256,address,uint256,address,address)" event -}
-
-
+{-| "Trade(address,uint256,address,uint256,address,address)" event
+-}
 tradeEvent : Address -> LogFilter
 tradeEvent contractAddress =
     { fromBlock = LatestBlock
@@ -614,10 +554,8 @@ type alias Trade =
     }
 
 
-
-{- "Withdraw(address,address,uint256,uint256)" event -}
-
-
+{-| "Withdraw(address,address,uint256,uint256)" event
+-}
 withdrawEvent : Address -> LogFilter
 withdrawEvent contractAddress =
     { fromBlock = LatestBlock

@@ -23,11 +23,11 @@ imports =
     [ "import BigInt exposing (BigInt)"
     , "import Json.Decode as Decode exposing (Decoder)"
     , "import Json.Decode.Pipeline exposing (custom, decode)"
-    , "import Web3.Types exposing (..)"
     , "import Web3.Eth.Types exposing (..)"
     , "import Web3.Evm.Decode exposing (..)"
     , "import Web3.Evm.Encode as Evm exposing (..)"
     , "import Web3.Utils exposing (keccak256)"
+    , ""
     , ""
     ]
 

@@ -28,11 +28,11 @@ generate (ContractABI declarations, moduleName) =
 
 declarationToElm :: Declaration -> [Text]
 declarationToElm func = concatMap (<> ["\n"]) $ filter (not . null)
-    [ decComment func
-    , decBody func
+    [ decComment func <> decBody func
     , decDecoder func
     , decTypeAlias func
     ]
+
 
 
 {-
@@ -41,9 +41,10 @@ declarationToElm func = concatMap (<> ["\n"]) $ filter (not . null)
 
 -}
 decComment :: Declaration -> [Text]
-decComment func@DFunction{} = EL.comment $ C.methodSignature func <> " function"
-decComment event@DEvent{}   = EL.comment $ C.methodSignature event <> " event"
+decComment func@DFunction{} = EL.docComment $ C.methodSignature func <> " function"
+decComment event@DEvent{}   = EL.docComment $ C.methodSignature event <> " event"
 decComment _ = []
+
 
 
 {-
@@ -61,14 +62,13 @@ decTypeAlias DFunction { funName, funOutputs } =
 decTypeAlias _ = []
 
 
+
 {-
 
     Body Generation
 
 -}
 decBody :: Declaration -> [Text]
-
--- Function Call
 decBody func@DFunction { funName, funOutputs, funInputs } = sig <> declaration <>  body
 
     where
@@ -95,7 +95,7 @@ decBody func@DFunction { funName, funOutputs, funInputs } = sig <> declaration <
                     [x] -> paramRecord $ "toElmDecoder " <> decoder x
                     _   -> paramRecord $ funName <> "Decoder"
 
--- Event LogFilter
+
 decBody event@DEvent { eveName, eveInputs } = sig <> declaration <> body
     where
         indexedTopics = filter (\arg -> isIndexed arg) (C.normalize eveInputs)
@@ -124,7 +124,6 @@ decBody _ = []
 
 -}
 decDecoder :: Declaration -> [Text]
-
 {-  Function Call Decoder
 
     someCallDecoder : Decoder SomeCall
@@ -198,6 +197,7 @@ decDecoder DEvent { eveName, eveInputs } =
             _  -> sig <> declaration <> body
 
 decDecoder _ = []
+
 
 
 {-

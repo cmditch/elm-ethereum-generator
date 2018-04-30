@@ -5,7 +5,7 @@ module Generator.ElmLang
     , wrapArray
     , multiLineArray
     , wrapQuotes
-    , comment
+    , docComment
     , multiLineRecord
     , singleLineRecord
     , typeAlias
@@ -45,9 +45,9 @@ wrapQuotes :: Text -> Text
 wrapQuotes t = "\"" <> t <> "\""
 
 
-comment :: Text -> [Text]
-comment t =
-    ["\n{- " <> t <> " -}"]
+docComment :: Text -> [Text]
+docComment t =
+    ["{-| " <> t <> "\n-}"]
 
 -- |
 -- |     { a : String
