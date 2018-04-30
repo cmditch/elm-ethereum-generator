@@ -4,7 +4,6 @@
 module Generator (generate) where
 
 import qualified Data.List            as List
-import           Data.Maybe
 import           Data.Monoid          ((<>))
 import           Data.Text.Lazy       (Text)
 import qualified Data.Text.Lazy       as Text
@@ -26,25 +25,11 @@ generate (ContractABI declarations, moduleName) =
         methodsAndEvents = concatMap (<> ["\n"]) (declarationBody <$> List.sort declarations)
 
 
-{- FUNCTIONS -}
-
--- | Generate Elm type signatures for solidity declaration (funcs, events, constructor)
-funcTypeSig :: Declaration -> [Text]
-funcTypeSig DFunction { funName, funInputs, funOutputs } = [ typeSig ]
-    where
-        typeSig = funName <> " : Address -> " <> Text.intercalate " -> " (inputs <> outputs)
-
-        inputs = elmType <$> C.normalize funInputs
-
-        outputs = ["Call " <> o]
-            where
-                o = case C.normalize funOutputs of
-                    []  -> "()"
-                    [x] -> elmType x
-                    _   -> U.textUpperFirst funName
-
 
 -- | Generate function bodies for each declaration type
+
+{- FUNCTION -}
+
 declarationBody :: Declaration -> [Text]
 declarationBody func@DFunction { funName, funInputs, funOutputs } =
     (funcTypeSig func)
@@ -97,11 +82,30 @@ declarationBody event@DEvent{} = concatMap (<> ["\n"])
 declarationBody _ = []
 
 
+
+-- | Generate Elm type signatures for solidity declaration (funcs, events, constructor)
+funcTypeSig :: Declaration -> [Text]
+funcTypeSig DFunction { funName, funInputs, funOutputs } = [ typeSig ]
+    where
+        typeSig = funName <> " : Address -> " <> Text.intercalate " -> " (inputs <> outputs)
+
+        inputs = elmType <$> C.normalize funInputs
+
+        outputs = ["Call " <> o]
+            where
+                o = case C.normalize funOutputs of
+                    []  -> "()"
+                    [x] -> elmType x
+                    _   -> U.textUpperFirst funName
+
+
+-- | Generates a type alias which represents the return value of an Ethereum event
 eventReturnType :: Declaration -> [Text]
 eventReturnType DEvent { eveName, eveInputs } =
     returnDataTypeAlias (U.textUpperFirst eveName) (C.normalize eveInputs)
 
 
+-- | Generates an events default LogFilter helper Function
 eventLogFilter :: Declaration -> [Text]
 eventLogFilter event@DEvent { eveName, eveInputs } = [sig, declaration, body]
     where
@@ -122,6 +126,8 @@ eventLogFilter event@DEvent { eveName, eveInputs } = [sig, declaration, body]
         body = Text.unlines $ U.indent 1 <$> (T.logFilterBuilder $ topicsBuilder (C.methodName event) indexedTopics)
 
 
+-- | Generates the "topics" field within a Logfilter
+-- | Comprised of a list of Maybe Strings
 topicsBuilder :: Text -> [Arg] -> Text
 topicsBuilder sig args =
     let
