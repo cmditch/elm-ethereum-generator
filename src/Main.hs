@@ -18,7 +18,7 @@ import qualified Text.PrettyPrint.ANSI.Leijen as PP
 
 version :: String
 version =
-    "0.1.2"
+    "0.2.0"
 
 
 main :: IO ()
@@ -32,11 +32,10 @@ readConfig :: Config -> IO ()
 readConfig config = do
     let writeTheFile path content = BS.writeFile path $ Text.encodeUtf8 content
     let outputPath = _output config
-    rawABI <- Text.decodeUtf8 <$> BS.readFile (_input config)
     decodedABI <- eitherDecode <$> BS.readFile (_input config) :: IO (Either String ContractABI)
     case decodedABI of
         Left err          -> putStrLn err
-        Right contractAbi -> writeTheFile outputPath $ generate (rawABI, contractAbi, outputPath)
+        Right contractAbi -> writeTheFile outputPath $ generate (contractAbi, outputPath)
 
 
 {- Parse -}

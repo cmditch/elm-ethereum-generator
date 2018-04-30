@@ -3,7 +3,10 @@
 module Utils (
     (|>),
     toLowerFirst,
+    toUpperFirst,
     textLowerFirst,
+    textUpperFirst,
+    newLine,
     minify,
     indent,
     paramAlphabet,
@@ -11,7 +14,7 @@ module Utils (
     sanitizeName
     ) where
 
-import           Data.Char      (isAlphaNum, isSeparator, toLower)
+import           Data.Char      (isAlphaNum, isSeparator, toLower, toUpper)
 import           Data.Int       (Int64)
 import           Data.Monoid    ((<>))
 import           Data.Text.Lazy (Text)
@@ -31,9 +34,21 @@ toLowerFirst (x : xs) = toLower x : xs
 
 
 -- | Lower first char of string
+toUpperFirst :: String -> String
+toUpperFirst []       = []
+toUpperFirst (x : xs) = toUpper x : xs
+
+
+-- | Lower first char of string
 textLowerFirst :: Text -> Text
 textLowerFirst t = (Text.singleton . toLower $ Text.head t) <> Text.tail t
 
+-- | Lower first char of string
+textUpperFirst :: Text -> Text
+textUpperFirst t = (Text.singleton . toUpper $ Text.head t) <> Text.tail t
+
+newLine :: Text -> Text
+newLine = (<> "\n")
 
 -- | Remove all spaces, tabs, and newlines
 minify :: Text ->  Text

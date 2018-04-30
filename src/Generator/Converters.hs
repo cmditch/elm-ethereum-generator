@@ -13,41 +13,32 @@ import           Utils           (paramAlphabet, sanitizeName, textLowerFirst)
 
 
 -- | Convert Solidity type in ABI to elm-web3 type
-typeCast :: Text -> Text
-typeCast "address"  = "Address"
-typeCast "bool"     = "Bool"
-typeCast "string"   = "String"
-typeCast tipe | Text.isPrefixOf "int" tipe  = "BigInt"
-              | Text.isPrefixOf "uint" tipe = "BigInt"
-              | Text.isPrefixOf "bytes" tipe = "Bytes"
-              | otherwise = tipe <> "-ERROR!"
+getElmType :: Text -> Text
+getElmType "address"  = "Address"
+getElmType "bool"     = "Bool"
+getElmType tipe | Text.isPrefixOf "uint" tipe = "BigInt"
+                | otherwise = tipe <> "-ERROR!"
 
 
 -- | Get elm decoder for solidity type
 getDecoder :: Text -> Text
-getDecoder "Address" = "D.addressDecoder"
-getDecoder "Bool"    = "D.bool"
-getDecoder "String"  = "D.string"
-getDecoder "BigInt"  = "D.bigIntDecoder"
-getDecoder "Bytes"   = "D.bytesDecoder"
-getDecoder "Hex"     = "D.hexDecoder"
-getDecoder v         = v <> "-ERROR!"
+getDecoder "address" = "address"
+getDecoder "bool"    = "bool"
+getDecoder tipe | Text.isPrefixOf "uint" tipe = "uint"
+                | otherwise = tipe <> "-ERROR!"
 
 
 -- | Get elm enocder for solidity type
-getEncoder :: Text -> Text
-getEncoder "Address" = "E.encodeAddress"
-getEncoder "Bool"    = "E.bool"
-getEncoder "String"  = "E.string"
-getEncoder "BigInt"  = "E.encodeBigInt"
-getEncoder "Bytes"   = "E.encodeBytes"
-getEncoder "Hex"     = "E.encodeHex"
-getEncoder v         = v <> "-ERROR!"
+getEncodingType :: Text -> Text
+getEncodingType "address" = "AddressE"
+getEncodingType "bool"    = "BoolE"
+getEncodingType tipe | Text.isPrefixOf "uint" tipe = "UintE"
+                     | otherwise = tipe <> "-ERROR!"
 
 
 inputEncoder :: Arg -> Text
-inputEncoder Arg { nameAsInput, encoder } =
-    encoder <> " " <>  nameAsInput
+inputEncoder Arg { nameAsInput, encoding } =
+    encoding <> " " <>  nameAsInput
 
 
 -- |    "transfer(address,uint256)"
@@ -57,6 +48,12 @@ methodName DFunction { funName, funInputs } =
     <> funName
     <> "("
     <> Text.intercalate "," (funArgType <$> funInputs)
+    <> ")\""
+methodName DEvent { eveName, eveInputs } =
+    "\""
+    <> eveName
+    <> "("
+    <> Text.intercalate "," (eveArgType <$> eveInputs)
     <> ")\""
 methodName _ = ""
 
@@ -78,8 +75,10 @@ data Arg = Arg  { elmType      :: Text
                 , nameAsOutput :: Text
                 , web3Field    :: Text
                 , decoder      :: Text
-                , encoder      :: Text
+                , encoding     :: Text
+                , isIndexed    :: Bool
                 } deriving (Show, Eq, Ord)
+
 
 class NormalizedArgs a where
     normalize  :: a -> [Arg]
@@ -93,23 +92,25 @@ instance NormalizedArgs [EventArg] where
     normalize args = map (rename . eventTuple) (indexed args)
 
 
-funcTuple :: (Int, FunctionArg) -> (Int, (Text, Text))
-funcTuple (i, FunctionArg { funArgName, funArgType }) = (i, (funArgName, funArgType))
+funcTuple :: (Int, FunctionArg) -> (Int, (Text, Text, Bool))
+funcTuple (i, FunctionArg { funArgName, funArgType }) = (i, (funArgName, funArgType, False))
 
-eventTuple :: (Int, EventArg) -> (Int, (Text, Text))
-eventTuple (i, EventArg { eveArgName, eveArgType }) = (i, (eveArgName, eveArgType))
 
-rename :: (Int, (Text, Text)) -> Arg
-rename (index, (argName, argType)) = case argName of
-    "" ->  Arg type' nInput nOutput indexT decoder encoder
-    _  ->  Arg type' (sanitizeName argName) (sanitizeName argName) argName decoder encoder
+eventTuple :: (Int, EventArg) -> (Int, (Text, Text, Bool))
+eventTuple (i, EventArg { eveArgName, eveArgType, eveArgIndexed }) = (i, (eveArgName, eveArgType, eveArgIndexed))
+
+
+rename :: (Int, (Text, Text, Bool)) -> Arg
+rename (index, (argName, argType, isIndexed)) = case argName of
+    "" ->  Arg type' nInput nOutput indexT decoder encoder isIndexed
+    _  ->  Arg type' (sanitizeName argName) (sanitizeName argName) argName decoder encoder isIndexed
     where
         indexT  = Text.pack (show index)
-        type'   = typeCast argType
+        type'   = getElmType argType
         nInput  = alphabetInt index
         nOutput = "v" <> indexT
-        decoder = getDecoder type'
-        encoder = getEncoder type'
+        decoder = getDecoder argType
+        encoder = getEncodingType argType
 
 
 alphabetInt :: Int -> Text

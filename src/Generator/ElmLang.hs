@@ -3,6 +3,8 @@
 module Generator.ElmLang
     ( wrapInLet
     , wrapArray
+    , multiLineArray
+    , wrapQuotes
     , comment
     , multiLineRecord
     , singleLineRecord
@@ -31,6 +33,15 @@ wrapArray :: Text -> Text
 wrapArray "" = "[]"
 wrapArray t  = "[ " <> t <> " ]"
 
+-- Pushes it 8 spaces out
+multiLineArray :: [Text] -> Text
+multiLineArray fields =
+    "\n        [ " <> Text.intercalate "\n        , " fields <> "\n        ]"
+
+
+wrapQuotes :: Text -> Text
+wrapQuotes t = "\"" <> t <> "\""
+
 
 comment :: Text -> [Text]
 comment t =
@@ -41,6 +52,7 @@ comment t =
 -- |     , b : Int
 -- |     }
 -- |
+-- | Pushes it 4 spaces out
 multiLineRecord :: [Text] -> Text
 multiLineRecord fields =
     "\n    { " <> Text.intercalate "\n    , " fields <> "\n    }"
