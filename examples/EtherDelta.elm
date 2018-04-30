@@ -1,4 +1,49 @@
-module EtherDelta exposing (..)
+module EtherDelta
+    exposing
+        ( accountLevelsAddr
+        , admin
+        , amountFilled
+        , availableVolume
+        , balanceOf
+        , cancelOrder
+        , changeAccountLevelsAddr
+        , changeAdmin
+        , changeFeeAccount
+        , changeFeeMake
+        , changeFeeRebate
+        , changeFeeTake
+        , deposit
+        , depositToken
+        , feeAccount
+        , feeMake
+        , feeRebate
+        , feeTake
+        , order
+        , OrderFills
+        , orderFills
+        , orderFillsDecoder
+        , orders
+        , testTrade
+        , tokens
+        , trade
+        , withdraw
+        , withdrawToken
+        , Cancel
+        , cancelEvent
+        , cancelDecoder
+        , Deposit
+        , depositEvent
+        , depositDecoder
+        , Order
+        , orderEvent
+        , orderDecoder
+        , Trade
+        , tradeEvent
+        , tradeDecoder
+        , Withdraw
+        , withdrawEvent
+        , withdrawDecoder
+        )
 
 import BigInt exposing (BigInt)
 import Json.Decode as Decode exposing (Decoder)
@@ -296,6 +341,13 @@ order contractAddress tokenGet amountGet tokenGive amountGive expires nonce =
 
 {-| "orderFills(address,bytes32)" function
 -}
+type alias OrderFills =
+    { v0 : BigInt
+    , v1 : BigInt
+    , v2 : BigInt
+    }
+
+
 orderFills : Address -> Address -> String -> Call OrderFills
 orderFills contractAddress a b =
     { to = Just contractAddress
@@ -316,13 +368,6 @@ orderFillsDecoder =
         |> andMap uint
         |> andMap uint
         |> toElmDecoder
-
-
-type alias OrderFills =
-    { v0 : BigInt
-    , v1 : BigInt
-    , v2 : BigInt
-    }
 
 
 {-| "orders(address,bytes32)" function
@@ -417,6 +462,20 @@ withdrawToken contractAddress token amount =
 
 {-| "Cancel(address,uint256,address,uint256,uint256,uint256,address,uint8,bytes32,bytes32)" event
 -}
+type alias Cancel =
+    { tokenGet : Address
+    , amountGet : BigInt
+    , tokenGive : Address
+    , amountGive : BigInt
+    , expires : BigInt
+    , nonce : BigInt
+    , user : Address
+    , v : BigInt
+    , r : String
+    , s : String
+    }
+
+
 cancelEvent : Address -> LogFilter
 cancelEvent contractAddress =
     { fromBlock = LatestBlock
@@ -441,22 +500,16 @@ cancelDecoder =
         |> custom (data 9 bytes)
 
 
-type alias Cancel =
-    { tokenGet : Address
-    , amountGet : BigInt
-    , tokenGive : Address
-    , amountGive : BigInt
-    , expires : BigInt
-    , nonce : BigInt
+{-| "Deposit(address,address,uint256,uint256)" event
+-}
+type alias Deposit =
+    { token : Address
     , user : Address
-    , v : BigInt
-    , r : String
-    , s : String
+    , amount : BigInt
+    , balance : BigInt
     }
 
 
-{-| "Deposit(address,address,uint256,uint256)" event
--}
 depositEvent : Address -> LogFilter
 depositEvent contractAddress =
     { fromBlock = LatestBlock
@@ -475,16 +528,19 @@ depositDecoder =
         |> custom (data 3 uint)
 
 
-type alias Deposit =
-    { token : Address
+{-| "Order(address,uint256,address,uint256,uint256,uint256,address)" event
+-}
+type alias Order =
+    { tokenGet : Address
+    , amountGet : BigInt
+    , tokenGive : Address
+    , amountGive : BigInt
+    , expires : BigInt
+    , nonce : BigInt
     , user : Address
-    , amount : BigInt
-    , balance : BigInt
     }
 
 
-{-| "Order(address,uint256,address,uint256,uint256,uint256,address)" event
--}
 orderEvent : Address -> Maybe Address -> Maybe Address -> Maybe Address -> LogFilter
 orderEvent contractAddress tokenGet tokenGive user =
     { fromBlock = LatestBlock
@@ -511,19 +567,18 @@ orderDecoder =
         |> custom (topic 3 address)
 
 
-type alias Order =
+{-| "Trade(address,uint256,address,uint256,address,address)" event
+-}
+type alias Trade =
     { tokenGet : Address
     , amountGet : BigInt
     , tokenGive : Address
     , amountGive : BigInt
-    , expires : BigInt
-    , nonce : BigInt
-    , user : Address
+    , get : Address
+    , give : Address
     }
 
 
-{-| "Trade(address,uint256,address,uint256,address,address)" event
--}
 tradeEvent : Address -> LogFilter
 tradeEvent contractAddress =
     { fromBlock = LatestBlock
@@ -544,18 +599,16 @@ tradeDecoder =
         |> custom (data 5 address)
 
 
-type alias Trade =
-    { tokenGet : Address
-    , amountGet : BigInt
-    , tokenGive : Address
-    , amountGive : BigInt
-    , get : Address
-    , give : Address
+{-| "Withdraw(address,address,uint256,uint256)" event
+-}
+type alias Withdraw =
+    { token : Address
+    , user : Address
+    , amount : BigInt
+    , balance : BigInt
     }
 
 
-{-| "Withdraw(address,address,uint256,uint256)" event
--}
 withdrawEvent : Address -> LogFilter
 withdrawEvent contractAddress =
     { fromBlock = LatestBlock
@@ -572,11 +625,3 @@ withdrawDecoder =
         |> custom (data 1 address)
         |> custom (data 2 uint)
         |> custom (data 3 uint)
-
-
-type alias Withdraw =
-    { token : Address
-    , user : Address
-    , amount : BigInt
-    , balance : BigInt
-    }

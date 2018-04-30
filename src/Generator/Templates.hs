@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Generator.Templates
-    ( moduleName
+    ( moduleNameAndExports
     , imports
     , callBuilder
     , logFilterBuilder
@@ -9,12 +9,19 @@ module Generator.Templates
 
 import           Data.Monoid    ((<>))
 import           Data.Text.Lazy (Text)
+import qualified Utils          as U
 
 
 -- | Declare module/contract name
-moduleName :: Text -> [Text]
-moduleName name =
-    ["module " <> name <> " exposing (..)\n"]
+moduleNameAndExports :: Text -> [Text] -> [Text]
+moduleNameAndExports name (x:xs) =
+    let
+        exportHelper n = U.indent 2 (", " <> n)
+    in
+        [ "module " <> name
+        , U.indent 1 "exposing"
+        , U.indent 2  ("( " <> x)
+        ] <> (exportHelper <$> xs) <> [ U.indent 2 ")\n" ]
 
 
 -- | Elm imports

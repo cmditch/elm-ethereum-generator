@@ -18,20 +18,56 @@ import qualified Utils                as U
 
 generate :: (ContractABI, FilePath) -> Text
 generate (ContractABI declarations, moduleName) =
-    Text.intercalate "\n" (name <> imports <> methodsAndEvents)
+    Text.unlines (nameAndExports <> imports <> methodsAndEvents)
     where
-        name = T.moduleName $ U.getFileName moduleName
+        sortedDecs = List.sort declarations
+        exportList = concat (decExports <$> sortedDecs)
+        nameAndExports = T.moduleNameAndExports (U.getFileName moduleName) exportList
         imports = T.imports
-        methodsAndEvents = concat (declarationToElm <$> List.sort declarations)
+        methodsAndEvents = concat (declarationToElm <$> sortedDecs)
 
 
 
 declarationToElm :: Declaration -> [Text]
-declarationToElm func = concatMap (<> ["\n"]) $ filter (not . null)
-    [ decComment func <> decBody func
-    , decDecoder func
-    , decTypeAlias func
-    ]
+declarationToElm func = concatMap (<> ["\n"]) $ filter (not . null) $
+    case decTypeAlias func of
+        [] ->
+            [ decComment func <> decBody func
+            , decDecoder func
+            ]
+        typeAlias ->
+            [ decComment func <> typeAlias
+            , decBody func
+            , decDecoder func
+            ]
+
+
+
+{-
+
+    Exports Generation
+
+-}
+decExports :: Declaration -> [Text]
+decExports DFunction { funName, funOutputs } =
+    let
+        decoderName = funName <> "Decoder"
+        typeAlias = U.textUpperFirst funName
+    in
+        case funOutputs of
+            []  -> [ funName ]
+            [_] -> [ funName ]
+            _   -> [ typeAlias, funName, decoderName ]
+
+decExports DEvent { eveName } =
+    let
+        logFilterName = U.textLowerFirst eveName <> "Event"
+        decoderName = U.textLowerFirst eveName <> "Decoder"
+        typeAlias = U.textUpperFirst eveName
+    in
+        [ typeAlias, logFilterName, decoderName ]
+
+decExports _ = []
 
 
 
