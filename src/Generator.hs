@@ -92,7 +92,7 @@ decTypeAlias :: Declaration -> [Text]
 decTypeAlias DEvent { eveName, eveInputs } = EL.typeAlias (U.textUpperFirst eveName) (C.normalize eveInputs)
 decTypeAlias DFunction { funName, funOutputs } =
     case funOutputs of
-        [] -> []
+        []  -> []
         [_] -> []
         _   -> EL.typeAlias (U.textUpperFirst funName) (C.normalize funOutputs)
 decTypeAlias _ = []

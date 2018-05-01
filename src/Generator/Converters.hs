@@ -12,12 +12,22 @@ import           Types
 import           Utils           (paramAlphabet, sanitizeName, textLowerFirst)
 
 
+-- TODO: Support fixed sized array types, e.g. address[3]
+-- TODO: Support all bytes sizes, e.g. bytes32 or bytes5
+
 -- | Convert Solidity type in ABI to elm-web3 type
 getElmType :: Text -> Text
 getElmType "address"  = "Address"
 getElmType "bool"     = "Bool"
-getElmType tipe | Text.isPrefixOf "uint" tipe = "BigInt"
-                | Text.isPrefixOf "bytes" tipe = "String"
+getElmType "bytes"    = "String"
+getElmType "string"   = "String"
+getElmType "bytes32"   = "String"
+getElmType "bytes4"   = "String"
+getElmType tipe | Text.isPrefixOf "uint" tipe && Text.isSuffixOf "[]" tipe = "List BigInt"
+                | Text.isPrefixOf "bool" tipe && Text.isSuffixOf "[]" tipe = "List Bool"
+                | Text.isPrefixOf "address" tipe && Text.isSuffixOf "[]" tipe = "List Address"
+                | Text.isPrefixOf "uint" tipe = "BigInt"
+                | Text.isPrefixOf "string" tipe = "String"
                 | otherwise = tipe <> "-ERROR!"
 
 
@@ -25,17 +35,30 @@ getElmType tipe | Text.isPrefixOf "uint" tipe = "BigInt"
 getDecoder :: Text -> Text
 getDecoder "address" = "address"
 getDecoder "bool"    = "bool"
-getDecoder tipe | Text.isPrefixOf "uint" tipe = "uint"
-                | Text.isPrefixOf "bytes" tipe = "bytes"
+getDecoder "bytes"   = "dBytes"
+getDecoder "string"  = "string"
+getDecoder "bytes32"  = "string"
+getDecoder "bytes4"  = "string"
+getDecoder tipe | Text.isPrefixOf "uint" tipe && Text.isSuffixOf "[]" tipe = "(dArray uint)"
+                | Text.isPrefixOf "bool" tipe && Text.isSuffixOf "[]" tipe = "(dArray bool)"
+                | Text.isPrefixOf "address" tipe && Text.isSuffixOf "[]" tipe = "(dArray address)"
+                | Text.isPrefixOf "uint" tipe = "uint"
+                | Text.isPrefixOf "string" tipe = "string"
                 | otherwise = tipe <> "-ERROR!"
 
 
 -- | Get elm enocder for solidity type
 getEncodingType :: Text -> Text
-getEncodingType "address" = "AddressE"
-getEncodingType "bool"    = "BoolE"
-getEncodingType tipe | Text.isPrefixOf "uint" tipe = "UintE"
-                     | Text.isPrefixOf "bytes" tipe = "BytesE"
+getEncodingType "address"  = "AddressE"
+getEncodingType "bool"     = "BoolE"
+getEncodingType "bytes"    = "DBytesE"
+getEncodingType "string"   = "StringE"
+getEncodingType "bytes32"   = "StringE"
+getEncodingType "bytes4"   = "StringE"
+getEncodingType tipe | Text.isPrefixOf "uint" tipe && Text.isSuffixOf "[]" tipe = "ListE UintE"
+                     | Text.isPrefixOf "bool" tipe && Text.isSuffixOf "[]" tipe = "ListE BoolE"
+                     | Text.isPrefixOf "address" tipe && Text.isSuffixOf "[]" tipe = "ListE AddressE"
+                     | Text.isPrefixOf "uint" tipe = "UintE"
                      | otherwise = tipe <> "-ERROR!"
 
 
@@ -48,15 +71,11 @@ callDataEncodings Arg { nameAsInput, encoding } =
 -- |    "transfer(address,uint256)"
 methodSignature :: Declaration -> Text
 methodSignature DFunction { funName, funInputs } =
-    "\""
-    <> funName
-    <> "("
+    "\"" <> funName <> "("
     <> Text.intercalate "," (funArgType <$> funInputs)
     <> ")\""
 methodSignature DEvent { eveName, eveInputs } =
-    "\""
-    <> eveName
-    <> "("
+    "\"" <> eveName <> "("
     <> Text.intercalate "," (eveArgType <$> eveInputs)
     <> ")\""
 methodSignature _ = ""

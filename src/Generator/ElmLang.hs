@@ -73,7 +73,7 @@ typeAlias :: Text -> [C.Arg] -> [Text]
 typeAlias name outputs =
     case outputs of
         []  -> []
-        [_] -> []
+        [x] -> ["type alias " <> name <> " =", indent 1 $ singleLineRecord [C.outputRecord x] ]
         xs  -> [ "type alias " <> name <> " ="
                <> multiLineRecord (C.outputRecord <$> xs)
                ]
