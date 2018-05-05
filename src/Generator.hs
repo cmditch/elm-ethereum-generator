@@ -116,7 +116,7 @@ decBody isDebug (func@DFunction { funName, funOutputs, funInputs }) = sig <> dec
                 _  -> " contractAddress " <> Text.intercalate " " (nameAsInput <$> normalizedInputs)
 
         paramRecord :: Text -> [Text]
-        paramRecord = T.callBuilder
+        paramRecord = T.callBuilder isDebug
             (C.methodSignature func)
             (EL.wrapArray $ Text.intercalate ", " (C.callDataEncodings <$> normalizedInputs))
 

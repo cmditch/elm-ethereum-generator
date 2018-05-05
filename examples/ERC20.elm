@@ -1,4 +1,23 @@
-module ERC20 exposing (..)
+module ERC20
+    exposing
+        ( allowance
+        , allowed
+        , approve
+        , balanceOf
+        , balances
+        , decimals
+        , name
+        , symbol
+        , totalSupply
+        , transfer
+        , transferFrom
+        , Approval
+        , approvalEvent
+        , approvalDecoder
+        , Transfer
+        , transferEvent
+        , transferDecoder
+        )
 
 import BigInt exposing (BigInt)
 import Json.Decode as Decode exposing (Decoder)
@@ -99,6 +118,36 @@ decimals contractAddress =
     }
 
 
+{-| "name()" function
+-}
+name : Address -> Call String
+name contractAddress =
+    { to = Just contractAddress
+    , from = Nothing
+    , gas = Nothing
+    , gasPrice = Nothing
+    , value = Nothing
+    , data = Just <| encodeData "name()" []
+    , nonce = Nothing
+    , decoder = toElmDecoder string
+    }
+
+
+{-| "symbol()" function
+-}
+symbol : Address -> Call String
+symbol contractAddress =
+    { to = Just contractAddress
+    , from = Nothing
+    , gas = Nothing
+    , gasPrice = Nothing
+    , value = Nothing
+    , data = Just <| encodeData "symbol()" []
+    , nonce = Nothing
+    , decoder = toElmDecoder string
+    }
+
+
 {-| "totalSupply()" function
 -}
 totalSupply : Address -> Call BigInt
@@ -146,12 +195,19 @@ transferFrom contractAddress from to value =
 
 {-| "Approval(address,address,uint256)" event
 -}
+type alias Approval =
+    { owner : Address
+    , spender : Address
+    , value : BigInt
+    }
+
+
 approvalEvent : Address -> Maybe Address -> Maybe Address -> LogFilter
-approvalEvent contractAddress owner spender =
+approvalEvent contractAddress owner spender = 
     { fromBlock = LatestBlock
     , toBlock = LatestBlock
     , address = contractAddress
-    , topics =
+    , topics = 
         [ Just <| keccak256 "Approval(address,address,uint256)"
         , Maybe.map (Evm.encode << AddressE) owner
         , Maybe.map (Evm.encode << AddressE) spender
@@ -160,28 +216,28 @@ approvalEvent contractAddress owner spender =
 
 
 approvalDecoder : Decoder Approval
-approvalDecoder =
+approvalDecoder = 
     decode Approval
         |> custom (topic 1 address)
         |> custom (topic 2 address)
         |> custom (data 0 uint)
 
 
-type alias Approval =
-    { owner : Address
-    , spender : Address
+{-| "Transfer(address,address,uint256)" event
+-}
+type alias Transfer =
+    { from : Address
+    , to : Address
     , value : BigInt
     }
 
 
-{-| "Transfer(address,address,uint256)" event
--}
 transferEvent : Address -> Maybe Address -> Maybe Address -> LogFilter
-transferEvent contractAddress from to =
+transferEvent contractAddress from to = 
     { fromBlock = LatestBlock
     , toBlock = LatestBlock
     , address = contractAddress
-    , topics =
+    , topics = 
         [ Just <| keccak256 "Transfer(address,address,uint256)"
         , Maybe.map (Evm.encode << AddressE) from
         , Maybe.map (Evm.encode << AddressE) to
@@ -190,15 +246,10 @@ transferEvent contractAddress from to =
 
 
 transferDecoder : Decoder Transfer
-transferDecoder =
+transferDecoder = 
     decode Transfer
         |> custom (topic 1 address)
         |> custom (topic 2 address)
         |> custom (data 0 uint)
 
 
-type alias Transfer =
-    { from : Address
-    , to : Address
-    , value : BigInt
-    }

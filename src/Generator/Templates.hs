@@ -40,14 +40,21 @@ imports =
 
 
 -- | Return type for contract functions
-callBuilder :: Text -> Text -> Text -> [Text]
-callBuilder sig encodings decoder =
+callBuilder :: Bool -> Text -> Text -> Text -> [Text]
+callBuilder isDebug sig encodings decoder =
+    let
+        encodeDataFunc =
+            if isDebug then
+                " encodeData "
+            else
+                " encodeDataWithDebug "
+    in
     [ "{ to = Just contractAddress"
     , ", from = Nothing"
     , ", gas = Nothing"
     , ", gasPrice = Nothing"
     , ", value = Nothing"
-    , ", data = Just <| encodeData " <> sig <> " " <> encodings
+    , ", data = Just <|" <> encodeDataFunc <> sig <> " " <> encodings
     , ", nonce = Nothing"
     , ", decoder = " <> decoder
     , "}"

@@ -477,7 +477,7 @@ type alias Cancel =
 
 
 cancelEvent : Address -> LogFilter
-cancelEvent contractAddress =
+cancelEvent contractAddress = 
     { fromBlock = LatestBlock
     , toBlock = LatestBlock
     , address = contractAddress
@@ -486,7 +486,7 @@ cancelEvent contractAddress =
 
 
 cancelDecoder : Decoder Cancel
-cancelDecoder =
+cancelDecoder = 
     decode Cancel
         |> custom (data 0 address)
         |> custom (data 1 uint)
@@ -511,7 +511,7 @@ type alias Deposit =
 
 
 depositEvent : Address -> LogFilter
-depositEvent contractAddress =
+depositEvent contractAddress = 
     { fromBlock = LatestBlock
     , toBlock = LatestBlock
     , address = contractAddress
@@ -520,7 +520,7 @@ depositEvent contractAddress =
 
 
 depositDecoder : Decoder Deposit
-depositDecoder =
+depositDecoder = 
     decode Deposit
         |> custom (data 0 address)
         |> custom (data 1 address)
@@ -542,11 +542,11 @@ type alias Order =
 
 
 orderEvent : Address -> Maybe Address -> Maybe Address -> Maybe Address -> LogFilter
-orderEvent contractAddress tokenGet tokenGive user =
+orderEvent contractAddress tokenGet tokenGive user = 
     { fromBlock = LatestBlock
     , toBlock = LatestBlock
     , address = contractAddress
-    , topics =
+    , topics = 
         [ Just <| keccak256 "Order(address,uint256,address,uint256,uint256,uint256,address)"
         , Maybe.map (Evm.encode << AddressE) tokenGet
         , Maybe.map (Evm.encode << AddressE) tokenGive
@@ -556,7 +556,7 @@ orderEvent contractAddress tokenGet tokenGive user =
 
 
 orderDecoder : Decoder Order
-orderDecoder =
+orderDecoder = 
     decode Order
         |> custom (topic 1 address)
         |> custom (data 0 uint)
@@ -580,7 +580,7 @@ type alias Trade =
 
 
 tradeEvent : Address -> LogFilter
-tradeEvent contractAddress =
+tradeEvent contractAddress = 
     { fromBlock = LatestBlock
     , toBlock = LatestBlock
     , address = contractAddress
@@ -589,7 +589,7 @@ tradeEvent contractAddress =
 
 
 tradeDecoder : Decoder Trade
-tradeDecoder =
+tradeDecoder = 
     decode Trade
         |> custom (data 0 address)
         |> custom (data 1 uint)
@@ -610,7 +610,7 @@ type alias Withdraw =
 
 
 withdrawEvent : Address -> LogFilter
-withdrawEvent contractAddress =
+withdrawEvent contractAddress = 
     { fromBlock = LatestBlock
     , toBlock = LatestBlock
     , address = contractAddress
@@ -619,9 +619,11 @@ withdrawEvent contractAddress =
 
 
 withdrawDecoder : Decoder Withdraw
-withdrawDecoder =
+withdrawDecoder = 
     decode Withdraw
         |> custom (data 0 address)
         |> custom (data 1 address)
         |> custom (data 2 uint)
         |> custom (data 3 uint)
+
+
