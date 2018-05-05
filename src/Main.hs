@@ -30,12 +30,14 @@ main =  do
 
 readConfig :: Config -> IO ()
 readConfig config = do
-    let writeTheFile path content = BS.writeFile path $ Text.encodeUtf8 content
-    let outputPath = _output config
     decodedABI <- eitherDecode <$> BS.readFile (_input config) :: IO (Either String ContractABI)
     case decodedABI of
         Left err          -> putStrLn err
-        Right contractAbi -> writeTheFile outputPath $ generate (contractAbi, outputPath)
+        Right contractAbi -> writeTheFile outputPath $ generate (contractAbi, outputPath) isDebug
+    where
+        writeTheFile path content = BS.writeFile path $ Text.encodeUtf8 content
+        outputPath = _output config
+        isDebug = _debug config
 
 
 {- Parse -}
@@ -43,6 +45,7 @@ readConfig config = do
 data Config = Config
     { _input  :: FilePath
     , _output :: FilePath
+    , _debug  :: Bool
     }
 
 parse :: [String] -> Opt.ParserResult Config
@@ -54,6 +57,7 @@ flags :: Parser Config
 flags = Config
     <$> input
     <*> output
+    <*> debug
 
 
 preferences :: Opt.ParserPrefs
@@ -74,6 +78,11 @@ input =
 output :: Opt.Parser FilePath
 output =
     Opt.strArgument $ Opt.metavar "OUTPUT"
+
+
+debug :: Opt.Parser Bool
+debug =
+    Opt.switch $ long "debug" PP.<> help "Logs bytecode to console during decoding"
 
 
 helpInfo :: Opt.InfoMod Config

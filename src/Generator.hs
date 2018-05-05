@@ -16,29 +16,29 @@ import qualified Utils                as U
 
 
 
-generate :: (ContractABI, FilePath) -> Text
-generate (ContractABI declarations, moduleName) =
+generate :: (ContractABI, FilePath) -> Bool -> Text
+generate (ContractABI declarations, moduleName) isDebug =
     Text.unlines (nameAndExports <> imports <> methodsAndEvents)
     where
         sortedDecs = List.sort declarations
         exportList = concat (decExports <$> sortedDecs)
         nameAndExports = T.moduleNameAndExports (U.getFileName moduleName) exportList
         imports = T.imports
-        methodsAndEvents = concat (declarationToElm <$> sortedDecs)
+        methodsAndEvents = concat (declarationToElm isDebug <$> sortedDecs)
 
 
 
-declarationToElm :: Declaration -> [Text]
-declarationToElm func = concatMap (<> ["\n"]) $ filter (not . null) $
+declarationToElm :: Bool -> Declaration -> [Text]
+declarationToElm isDebug func = concatMap (<> ["\n"]) $ filter (not . null) $
     case decTypeAlias func of
         [] ->
-            [ decComment func <> decBody func
-            , decDecoder func
+            [ decComment func <> decBody isDebug func
+            , decDecoder isDebug func
             ]
         typeAlias ->
             [ decComment func <> typeAlias
-            , decBody func
-            , decDecoder func
+            , decBody isDebug func
+            , decDecoder isDebug func
             ]
 
 
@@ -104,8 +104,8 @@ decTypeAlias _ = []
     Body Generation
 
 -}
-decBody :: Declaration -> [Text]
-decBody func@DFunction { funName, funOutputs, funInputs } = sig <> declaration <>  body
+decBody :: Bool -> Declaration -> [Text]
+decBody isDebug (func@DFunction { funName, funOutputs, funInputs }) = sig <> declaration <>  body
 
     where
         normalizedInputs = C.normalize funInputs
@@ -124,15 +124,21 @@ decBody func@DFunction { funName, funOutputs, funInputs } = sig <> declaration <
 
         declaration = [ funName <> inputParamNames <> " =" ]
 
+        toElmDecoder =
+            if isDebug then
+                "toElmDecoderWithDebug " <> (C.methodSignature func) <> " "
+            else
+                "toElmDecoder "
+
         body =
             U.indent 1 <$>
                 case C.normalize funOutputs of
                     []  -> paramRecord "Decode.succeed ()"
-                    [x] -> paramRecord $ "toElmDecoder " <> decoder x
+                    [x] -> paramRecord $ toElmDecoder <> decoder x
                     _   -> paramRecord $ funName <> "Decoder"
 
 
-decBody event@DEvent { eveName, eveInputs } = sig <> declaration <> body
+decBody _ (event@DEvent { eveName, eveInputs }) = sig <> declaration <> body
     where
         indexedTopics = filter (\arg -> isIndexed arg) (C.normalize eveInputs)
 
@@ -150,7 +156,7 @@ decBody event@DEvent { eveName, eveInputs } = sig <> declaration <> body
 
         body = U.indent 1 <$> (T.logFilterBuilder $ topicsBuilder (C.methodSignature event) indexedTopics)
 
-decBody _ = []
+decBody _ _ = []
 
 
 
@@ -159,7 +165,7 @@ decBody _ = []
     Decoder Generation
 
 -}
-decDecoder :: Declaration -> [Text]
+decDecoder :: Bool -> Declaration -> [Text]
 {-  Function Call Decoder
 
     someCallDecoder : Decoder SomeCall
@@ -169,7 +175,7 @@ decDecoder :: Declaration -> [Text]
             |> andMap uint
             |> toElmDecoder
 -}
-decDecoder DFunction { funName, funOutputs } =
+decDecoder isDebug (func@DFunction { funName, funOutputs }) =
     let
         sig = [ funName <> "Decoder : Decoder " <>  U.textUpperFirst funName ]
 
@@ -180,9 +186,17 @@ decDecoder DFunction { funName, funOutputs } =
         toPipeLineText Arg { decoder } =
             "|> andMap " <> decoder
 
+        toElmDecoder =
+            if isDebug then
+                [ U.indent 2 "|> toElmDecoderWithDebug " <> C.methodSignature func ]
+            else
+                [ U.indent 2 "|> toElmDecoder" ]
+
+
+
         body = [ U.indent 1 ("evmDecode " <> U.textUpperFirst funName) ]
                 <> ( U.indent 2 <$> decoderPipline )
-                <> [ U.indent 2 "|> toElmDecoder" ]
+                <> toElmDecoder
 
     in
         case funOutputs of
@@ -198,7 +212,7 @@ decDecoder DFunction { funName, funOutputs } =
             |> custom (topic 1 uint)
             |> custom (data 0 address)
 -}
-decDecoder DEvent { eveName, eveInputs } =
+decDecoder isDebug (DEvent { eveName, eveInputs }) =
     let
         sig = [ U.textLowerFirst eveName <> "Decoder : Decoder " <> U.textUpperFirst eveName ]
 
@@ -232,7 +246,7 @@ decDecoder DEvent { eveName, eveInputs } =
             [] -> []
             _  -> sig <> declaration <> body
 
-decDecoder _ = []
+decDecoder _ _ = []
 
 
 
