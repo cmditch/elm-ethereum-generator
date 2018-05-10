@@ -86,14 +86,14 @@ admin contractAddress =
 
 {-| "amountFilled(address,uint256,address,uint256,uint256,uint256,address,uint8,bytes32,bytes32)" function
 -}
-amountFilled : Address -> Address -> BigInt -> Address -> BigInt -> BigInt -> BigInt -> Address -> BigInt -> String -> String -> Call BigInt
+amountFilled : Address -> Address -> BigInt -> Address -> BigInt -> BigInt -> BigInt -> Address -> BigInt -> bytes32-ERROR! -> bytes32-ERROR! -> Call BigInt
 amountFilled contractAddress tokenGet amountGet tokenGive amountGive expires nonce user v r s =
     { to = Just contractAddress
     , from = Nothing
     , gas = Nothing
     , gasPrice = Nothing
     , value = Nothing
-    , data = Just <| Evm.encodeFunctionCall "amountFilled(address,uint256,address,uint256,uint256,uint256,address,uint8,bytes32,bytes32)" [ AddressE tokenGet, UintE amountGet, AddressE tokenGive, UintE amountGive, UintE expires, UintE nonce, AddressE user, UintE v, StringE r, StringE s ]
+    , data = Just <| Evm.encodeFunctionCall "amountFilled(address,uint256,address,uint256,uint256,uint256,address,uint8,bytes32,bytes32)" [ AddressE tokenGet, UintE amountGet, AddressE tokenGive, UintE amountGive, UintE expires, UintE nonce, AddressE user, UintE v, bytes32-ERROR! r, bytes32-ERROR! s ]
     , nonce = Nothing
     , decoder = toElmDecoder Evm.uint
     }
@@ -101,14 +101,14 @@ amountFilled contractAddress tokenGet amountGet tokenGive amountGive expires non
 
 {-| "availableVolume(address,uint256,address,uint256,uint256,uint256,address,uint8,bytes32,bytes32)" function
 -}
-availableVolume : Address -> Address -> BigInt -> Address -> BigInt -> BigInt -> BigInt -> Address -> BigInt -> String -> String -> Call BigInt
+availableVolume : Address -> Address -> BigInt -> Address -> BigInt -> BigInt -> BigInt -> Address -> BigInt -> bytes32-ERROR! -> bytes32-ERROR! -> Call BigInt
 availableVolume contractAddress tokenGet amountGet tokenGive amountGive expires nonce user v r s =
     { to = Just contractAddress
     , from = Nothing
     , gas = Nothing
     , gasPrice = Nothing
     , value = Nothing
-    , data = Just <| Evm.encodeFunctionCall "availableVolume(address,uint256,address,uint256,uint256,uint256,address,uint8,bytes32,bytes32)" [ AddressE tokenGet, UintE amountGet, AddressE tokenGive, UintE amountGive, UintE expires, UintE nonce, AddressE user, UintE v, StringE r, StringE s ]
+    , data = Just <| Evm.encodeFunctionCall "availableVolume(address,uint256,address,uint256,uint256,uint256,address,uint8,bytes32,bytes32)" [ AddressE tokenGet, UintE amountGet, AddressE tokenGive, UintE amountGive, UintE expires, UintE nonce, AddressE user, UintE v, bytes32-ERROR! r, bytes32-ERROR! s ]
     , nonce = Nothing
     , decoder = toElmDecoder Evm.uint
     }
@@ -131,14 +131,14 @@ balanceOf contractAddress token user =
 
 {-| "cancelOrder(address,uint256,address,uint256,uint256,uint256,uint8,bytes32,bytes32)" function
 -}
-cancelOrder : Address -> Address -> BigInt -> Address -> BigInt -> BigInt -> BigInt -> BigInt -> String -> String -> Call ()
+cancelOrder : Address -> Address -> BigInt -> Address -> BigInt -> BigInt -> BigInt -> BigInt -> bytes32-ERROR! -> bytes32-ERROR! -> Call ()
 cancelOrder contractAddress tokenGet amountGet tokenGive amountGive expires nonce v r s =
     { to = Just contractAddress
     , from = Nothing
     , gas = Nothing
     , gasPrice = Nothing
     , value = Nothing
-    , data = Just <| Evm.encodeFunctionCall "cancelOrder(address,uint256,address,uint256,uint256,uint256,uint8,bytes32,bytes32)" [ AddressE tokenGet, UintE amountGet, AddressE tokenGive, UintE amountGive, UintE expires, UintE nonce, UintE v, StringE r, StringE s ]
+    , data = Just <| Evm.encodeFunctionCall "cancelOrder(address,uint256,address,uint256,uint256,uint256,uint8,bytes32,bytes32)" [ AddressE tokenGet, UintE amountGet, AddressE tokenGive, UintE amountGive, UintE expires, UintE nonce, UintE v, bytes32-ERROR! r, bytes32-ERROR! s ]
     , nonce = Nothing
     , decoder = Decode.succeed ()
     }
@@ -348,14 +348,14 @@ type alias OrderFills =
     }
 
 
-orderFills : Address -> Address -> String -> Call OrderFills
+orderFills : Address -> Address -> bytes32-ERROR! -> Call OrderFills
 orderFills contractAddress a b =
     { to = Just contractAddress
     , from = Nothing
     , gas = Nothing
     , gasPrice = Nothing
     , value = Nothing
-    , data = Just <| Evm.encodeFunctionCall "orderFills(address,bytes32)" [ AddressE a, StringE b ]
+    , data = Just <| Evm.encodeFunctionCall "orderFills(address,bytes32)" [ AddressE a, bytes32-ERROR! b ]
     , nonce = Nothing
     , decoder = orderFillsDecoder
     }
@@ -372,14 +372,14 @@ orderFillsDecoder =
 
 {-| "orders(address,bytes32)" function
 -}
-orders : Address -> Address -> String -> Call Bool
+orders : Address -> Address -> bytes32-ERROR! -> Call Bool
 orders contractAddress a b =
     { to = Just contractAddress
     , from = Nothing
     , gas = Nothing
     , gasPrice = Nothing
     , value = Nothing
-    , data = Just <| Evm.encodeFunctionCall "orders(address,bytes32)" [ AddressE a, StringE b ]
+    , data = Just <| Evm.encodeFunctionCall "orders(address,bytes32)" [ AddressE a, bytes32-ERROR! b ]
     , nonce = Nothing
     , decoder = toElmDecoder Evm.bool
     }
@@ -387,14 +387,14 @@ orders contractAddress a b =
 
 {-| "testTrade(address,uint256,address,uint256,uint256,uint256,address,uint8,bytes32,bytes32,uint256,address)" function
 -}
-testTrade : Address -> Address -> BigInt -> Address -> BigInt -> BigInt -> BigInt -> Address -> BigInt -> String -> String -> BigInt -> Address -> Call Bool
+testTrade : Address -> Address -> BigInt -> Address -> BigInt -> BigInt -> BigInt -> Address -> BigInt -> bytes32-ERROR! -> bytes32-ERROR! -> BigInt -> Address -> Call Bool
 testTrade contractAddress tokenGet amountGet tokenGive amountGive expires nonce user v r s amount sender =
     { to = Just contractAddress
     , from = Nothing
     , gas = Nothing
     , gasPrice = Nothing
     , value = Nothing
-    , data = Just <| Evm.encodeFunctionCall "testTrade(address,uint256,address,uint256,uint256,uint256,address,uint8,bytes32,bytes32,uint256,address)" [ AddressE tokenGet, UintE amountGet, AddressE tokenGive, UintE amountGive, UintE expires, UintE nonce, AddressE user, UintE v, StringE r, StringE s, UintE amount, AddressE sender ]
+    , data = Just <| Evm.encodeFunctionCall "testTrade(address,uint256,address,uint256,uint256,uint256,address,uint8,bytes32,bytes32,uint256,address)" [ AddressE tokenGet, UintE amountGet, AddressE tokenGive, UintE amountGive, UintE expires, UintE nonce, AddressE user, UintE v, bytes32-ERROR! r, bytes32-ERROR! s, UintE amount, AddressE sender ]
     , nonce = Nothing
     , decoder = toElmDecoder Evm.bool
     }
@@ -417,14 +417,14 @@ tokens contractAddress a b =
 
 {-| "trade(address,uint256,address,uint256,uint256,uint256,address,uint8,bytes32,bytes32,uint256)" function
 -}
-trade : Address -> Address -> BigInt -> Address -> BigInt -> BigInt -> BigInt -> Address -> BigInt -> String -> String -> BigInt -> Call ()
+trade : Address -> Address -> BigInt -> Address -> BigInt -> BigInt -> BigInt -> Address -> BigInt -> bytes32-ERROR! -> bytes32-ERROR! -> BigInt -> Call ()
 trade contractAddress tokenGet amountGet tokenGive amountGive expires nonce user v r s amount =
     { to = Just contractAddress
     , from = Nothing
     , gas = Nothing
     , gasPrice = Nothing
     , value = Nothing
-    , data = Just <| Evm.encodeFunctionCall "trade(address,uint256,address,uint256,uint256,uint256,address,uint8,bytes32,bytes32,uint256)" [ AddressE tokenGet, UintE amountGet, AddressE tokenGive, UintE amountGive, UintE expires, UintE nonce, AddressE user, UintE v, StringE r, StringE s, UintE amount ]
+    , data = Just <| Evm.encodeFunctionCall "trade(address,uint256,address,uint256,uint256,uint256,address,uint8,bytes32,bytes32,uint256)" [ AddressE tokenGet, UintE amountGet, AddressE tokenGive, UintE amountGive, UintE expires, UintE nonce, AddressE user, UintE v, bytes32-ERROR! r, bytes32-ERROR! s, UintE amount ]
     , nonce = Nothing
     , decoder = Decode.succeed ()
     }
@@ -471,8 +471,8 @@ type alias Cancel =
     , nonce : BigInt
     , user : Address
     , v : BigInt
-    , r : String
-    , s : String
+    , r : bytes32-ERROR!
+    , s : bytes32-ERROR!
     }
 
 
@@ -496,8 +496,8 @@ cancelDecoder =
         |> custom (data 5 Evm.uint)
         |> custom (data 6 Evm.address)
         |> custom (data 7 Evm.uint)
-        |> custom (data 8 Evm.string)
-        |> custom (data 9 Evm.string)
+        |> custom (data 8 bytes32-ERROR!)
+        |> custom (data 9 bytes32-ERROR!)
 
 
 {-| "Deposit(address,address,uint256,uint256)" event

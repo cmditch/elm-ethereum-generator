@@ -162,14 +162,14 @@ bid contractAddress wad =
 
 {-| "bite(bytes32)" function
 -}
-bite : Address -> String -> Call ()
+bite : Address -> bytes32-ERROR! -> Call ()
 bite contractAddress cup =
     { to = Just contractAddress
     , from = Nothing
     , gas = Nothing
     , gasPrice = Nothing
     , value = Nothing
-    , data = Just <| Evm.encodeFunctionCall "bite(bytes32)" [ StringE cup ]
+    , data = Just <| Evm.encodeFunctionCall "bite(bytes32)" [ bytes32-ERROR! cup ]
     , nonce = Nothing
     , decoder = Decode.succeed ()
     }
@@ -245,14 +245,14 @@ type alias Cups =
     }
 
 
-cups : Address -> String -> Call Cups
+cups : Address -> bytes32-ERROR! -> Call Cups
 cups contractAddress a =
     { to = Just contractAddress
     , from = Nothing
     , gas = Nothing
     , gasPrice = Nothing
     , value = Nothing
-    , data = Just <| Evm.encodeFunctionCall "cups(bytes32)" [ StringE a ]
+    , data = Just <| Evm.encodeFunctionCall "cups(bytes32)" [ bytes32-ERROR! a ]
     , nonce = Nothing
     , decoder = cupsDecoder
     }
@@ -285,14 +285,14 @@ din contractAddress =
 
 {-| "draw(bytes32,uint256)" function
 -}
-draw : Address -> String -> BigInt -> Call ()
+draw : Address -> bytes32-ERROR! -> BigInt -> Call ()
 draw contractAddress cup wad =
     { to = Just contractAddress
     , from = Nothing
     , gas = Nothing
     , gasPrice = Nothing
     , value = Nothing
-    , data = Just <| Evm.encodeFunctionCall "draw(bytes32,uint256)" [ StringE cup, UintE wad ]
+    , data = Just <| Evm.encodeFunctionCall "draw(bytes32,uint256)" [ bytes32-ERROR! cup, UintE wad ]
     , nonce = Nothing
     , decoder = Decode.succeed ()
     }
@@ -390,14 +390,14 @@ flow contractAddress =
 
 {-| "free(bytes32,uint256)" function
 -}
-free : Address -> String -> BigInt -> Call ()
+free : Address -> bytes32-ERROR! -> BigInt -> Call ()
 free contractAddress cup wad =
     { to = Just contractAddress
     , from = Nothing
     , gas = Nothing
     , gasPrice = Nothing
     , value = Nothing
-    , data = Just <| Evm.encodeFunctionCall "free(bytes32,uint256)" [ StringE cup, UintE wad ]
+    , data = Just <| Evm.encodeFunctionCall "free(bytes32,uint256)" [ bytes32-ERROR! cup, UintE wad ]
     , nonce = Nothing
     , decoder = Decode.succeed ()
     }
@@ -435,14 +435,14 @@ gem contractAddress =
 
 {-| "give(bytes32,address)" function
 -}
-give : Address -> String -> Address -> Call ()
+give : Address -> bytes32-ERROR! -> Address -> Call ()
 give contractAddress cup guy =
     { to = Just contractAddress
     , from = Nothing
     , gas = Nothing
     , gasPrice = Nothing
     , value = Nothing
-    , data = Just <| Evm.encodeFunctionCall "give(bytes32,address)" [ StringE cup, AddressE guy ]
+    , data = Just <| Evm.encodeFunctionCall "give(bytes32,address)" [ bytes32-ERROR! cup, AddressE guy ]
     , nonce = Nothing
     , decoder = Decode.succeed ()
     }
@@ -465,14 +465,14 @@ gov contractAddress =
 
 {-| "ink(bytes32)" function
 -}
-ink : Address -> String -> Call BigInt
+ink : Address -> bytes32-ERROR! -> Call BigInt
 ink contractAddress cup =
     { to = Just contractAddress
     , from = Nothing
     , gas = Nothing
     , gasPrice = Nothing
     , value = Nothing
-    , data = Just <| Evm.encodeFunctionCall "ink(bytes32)" [ StringE cup ]
+    , data = Just <| Evm.encodeFunctionCall "ink(bytes32)" [ bytes32-ERROR! cup ]
     , nonce = Nothing
     , decoder = toElmDecoder Evm.uint
     }
@@ -495,14 +495,14 @@ join contractAddress wad =
 
 {-| "lad(bytes32)" function
 -}
-lad : Address -> String -> Call Address
+lad : Address -> bytes32-ERROR! -> Call Address
 lad contractAddress cup =
     { to = Just contractAddress
     , from = Nothing
     , gas = Nothing
     , gasPrice = Nothing
     , value = Nothing
-    , data = Just <| Evm.encodeFunctionCall "lad(bytes32)" [ StringE cup ]
+    , data = Just <| Evm.encodeFunctionCall "lad(bytes32)" [ bytes32-ERROR! cup ]
     , nonce = Nothing
     , decoder = toElmDecoder Evm.address
     }
@@ -510,14 +510,14 @@ lad contractAddress cup =
 
 {-| "lock(bytes32,uint256)" function
 -}
-lock : Address -> String -> BigInt -> Call ()
+lock : Address -> bytes32-ERROR! -> BigInt -> Call ()
 lock contractAddress cup wad =
     { to = Just contractAddress
     , from = Nothing
     , gas = Nothing
     , gasPrice = Nothing
     , value = Nothing
-    , data = Just <| Evm.encodeFunctionCall "lock(bytes32,uint256)" [ StringE cup, UintE wad ]
+    , data = Just <| Evm.encodeFunctionCall "lock(bytes32,uint256)" [ bytes32-ERROR! cup, UintE wad ]
     , nonce = Nothing
     , decoder = Decode.succeed ()
     }
@@ -540,14 +540,14 @@ mat contractAddress =
 
 {-| "mold(bytes32,uint256)" function
 -}
-mold : Address -> String -> BigInt -> Call ()
+mold : Address -> bytes32-ERROR! -> BigInt -> Call ()
 mold contractAddress param val =
     { to = Just contractAddress
     , from = Nothing
     , gas = Nothing
     , gasPrice = Nothing
     , value = Nothing
-    , data = Just <| Evm.encodeFunctionCall "mold(bytes32,uint256)" [ StringE param, UintE val ]
+    , data = Just <| Evm.encodeFunctionCall "mold(bytes32,uint256)" [ bytes32-ERROR! param, UintE val ]
     , nonce = Nothing
     , decoder = Decode.succeed ()
     }
@@ -570,7 +570,7 @@ off contractAddress =
 
 {-| "open()" function
 -}
-open : Address -> Call String
+open : Address -> Call bytes32-ERROR!
 open contractAddress =
     { to = Just contractAddress
     , from = Nothing
@@ -579,7 +579,7 @@ open contractAddress =
     , value = Nothing
     , data = Just <| Evm.encodeFunctionCall "open()" []
     , nonce = Nothing
-    , decoder = toElmDecoder Evm.string
+    , decoder = toElmDecoder bytes32-ERROR!
     }
 
 
@@ -690,14 +690,14 @@ pit contractAddress =
 
 {-| "rap(bytes32)" function
 -}
-rap : Address -> String -> Call BigInt
+rap : Address -> bytes32-ERROR! -> Call BigInt
 rap contractAddress cup =
     { to = Just contractAddress
     , from = Nothing
     , gas = Nothing
     , gasPrice = Nothing
     , value = Nothing
-    , data = Just <| Evm.encodeFunctionCall "rap(bytes32)" [ StringE cup ]
+    , data = Just <| Evm.encodeFunctionCall "rap(bytes32)" [ bytes32-ERROR! cup ]
     , nonce = Nothing
     , decoder = toElmDecoder Evm.uint
     }
@@ -750,14 +750,14 @@ rum contractAddress =
 
 {-| "safe(bytes32)" function
 -}
-safe : Address -> String -> Call Bool
+safe : Address -> bytes32-ERROR! -> Call Bool
 safe contractAddress cup =
     { to = Just contractAddress
     , from = Nothing
     , gas = Nothing
     , gasPrice = Nothing
     , value = Nothing
-    , data = Just <| Evm.encodeFunctionCall "safe(bytes32)" [ StringE cup ]
+    , data = Just <| Evm.encodeFunctionCall "safe(bytes32)" [ bytes32-ERROR! cup ]
     , nonce = Nothing
     , decoder = toElmDecoder Evm.bool
     }
@@ -855,14 +855,14 @@ setVox contractAddress vox_ =
 
 {-| "shut(bytes32)" function
 -}
-shut : Address -> String -> Call ()
+shut : Address -> bytes32-ERROR! -> Call ()
 shut contractAddress cup =
     { to = Just contractAddress
     , from = Nothing
     , gas = Nothing
     , gasPrice = Nothing
     , value = Nothing
-    , data = Just <| Evm.encodeFunctionCall "shut(bytes32)" [ StringE cup ]
+    , data = Just <| Evm.encodeFunctionCall "shut(bytes32)" [ bytes32-ERROR! cup ]
     , nonce = Nothing
     , decoder = Decode.succeed ()
     }
@@ -900,14 +900,14 @@ skr contractAddress =
 
 {-| "tab(bytes32)" function
 -}
-tab : Address -> String -> Call BigInt
+tab : Address -> bytes32-ERROR! -> Call BigInt
 tab contractAddress cup =
     { to = Just contractAddress
     , from = Nothing
     , gas = Nothing
     , gasPrice = Nothing
     , value = Nothing
-    , data = Just <| Evm.encodeFunctionCall "tab(bytes32)" [ StringE cup ]
+    , data = Just <| Evm.encodeFunctionCall "tab(bytes32)" [ bytes32-ERROR! cup ]
     , nonce = Nothing
     , decoder = toElmDecoder Evm.uint
     }
@@ -990,14 +990,14 @@ vox contractAddress =
 
 {-| "wipe(bytes32,uint256)" function
 -}
-wipe : Address -> String -> BigInt -> Call ()
+wipe : Address -> bytes32-ERROR! -> BigInt -> Call ()
 wipe contractAddress cup wad =
     { to = Just contractAddress
     , from = Nothing
     , gas = Nothing
     , gasPrice = Nothing
     , value = Nothing
-    , data = Just <| Evm.encodeFunctionCall "wipe(bytes32,uint256)" [ StringE cup, UintE wad ]
+    , data = Just <| Evm.encodeFunctionCall "wipe(bytes32,uint256)" [ bytes32-ERROR! cup, UintE wad ]
     , nonce = Nothing
     , decoder = Decode.succeed ()
     }
@@ -1007,7 +1007,7 @@ wipe contractAddress cup wad =
 -}
 type alias LogNewCup =
     { lad : Address
-    , cup : String
+    , cup : bytes32-ERROR!
     }
 
 
@@ -1027,32 +1027,32 @@ logNewCupDecoder : Decoder LogNewCup
 logNewCupDecoder = 
     decode LogNewCup
         |> custom (topic 1 Evm.address)
-        |> custom (data 0 Evm.string)
+        |> custom (data 0 bytes32-ERROR!)
 
 
 {-| "LogNote(bytes4,address,bytes32,bytes32,uint256,bytes)" event
 -}
 type alias LogNote =
-    { sig : String
+    { sig : bytes4-ERROR!
     , guy : Address
-    , foo : String
-    , bar : String
+    , foo : bytes32-ERROR!
+    , bar : bytes32-ERROR!
     , wad : BigInt
     , fax : String
     }
 
 
-logNoteEvent : Address -> Maybe String -> Maybe Address -> Maybe String -> Maybe String -> LogFilter
+logNoteEvent : Address -> Maybe bytes4-ERROR! -> Maybe Address -> Maybe bytes32-ERROR! -> Maybe bytes32-ERROR! -> LogFilter
 logNoteEvent contractAddress sig guy foo bar = 
     { fromBlock = LatestBlock
     , toBlock = LatestBlock
     , address = contractAddress
     , topics = 
         [ Just <| U.keccak256 "LogNote(bytes4,address,bytes32,bytes32,uint256,bytes)"
-        , Maybe.map (evmEncode << StringE) sig
+        , Maybe.map (evmEncode << bytes4-ERROR!) sig
         , Maybe.map (evmEncode << AddressE) guy
-        , Maybe.map (evmEncode << StringE) foo
-        , Maybe.map (evmEncode << StringE) bar
+        , Maybe.map (evmEncode << bytes32-ERROR!) foo
+        , Maybe.map (evmEncode << bytes32-ERROR!) bar
         ]
     }
 
@@ -1060,12 +1060,12 @@ logNoteEvent contractAddress sig guy foo bar =
 logNoteDecoder : Decoder LogNote
 logNoteDecoder = 
     decode LogNote
-        |> custom (topic 1 Evm.string)
+        |> custom (topic 1 bytes4-ERROR!)
         |> custom (topic 2 Evm.address)
-        |> custom (topic 3 Evm.string)
-        |> custom (topic 4 Evm.string)
+        |> custom (topic 3 bytes32-ERROR!)
+        |> custom (topic 4 bytes32-ERROR!)
         |> custom (data 0 Evm.uint)
-        |> custom (data 1 Evm.dBytes)
+        |> custom (data 1 Evm.dynamicBytes)
 
 
 {-| "LogSetAuthority(address)" event
