@@ -48,10 +48,10 @@ module EtherDelta
 import BigInt exposing (BigInt)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Decode.Pipeline exposing (custom, decode)
-import Web3.Eth.Types exposing (..)
-import Web3.Evm.Decode exposing (..)
-import Web3.Evm.Encode as Evm exposing (..)
-import Web3.Utils exposing (keccak256)
+import Eth.Types exposing (..)
+import Eth.Utils as U
+import Evm.Decode as Evm exposing (evmDecode, andMap, toElmDecoder, topic, data)
+import Evm.Encode as Evm exposing (Encoding(..), evmEncode)
 
 
 {-| "accountLevelsAddr()" function
@@ -63,9 +63,9 @@ accountLevelsAddr contractAddress =
     , gas = Nothing
     , gasPrice = Nothing
     , value = Nothing
-    , data = Just <| encodeData "accountLevelsAddr()" []
+    , data = Just <| Evm.encodeFunctionCall "accountLevelsAddr()" []
     , nonce = Nothing
-    , decoder = toElmDecoder address
+    , decoder = toElmDecoder Evm.address
     }
 
 
@@ -78,9 +78,9 @@ admin contractAddress =
     , gas = Nothing
     , gasPrice = Nothing
     , value = Nothing
-    , data = Just <| encodeData "admin()" []
+    , data = Just <| Evm.encodeFunctionCall "admin()" []
     , nonce = Nothing
-    , decoder = toElmDecoder address
+    , decoder = toElmDecoder Evm.address
     }
 
 
@@ -93,9 +93,9 @@ amountFilled contractAddress tokenGet amountGet tokenGive amountGive expires non
     , gas = Nothing
     , gasPrice = Nothing
     , value = Nothing
-    , data = Just <| encodeData "amountFilled(address,uint256,address,uint256,uint256,uint256,address,uint8,bytes32,bytes32)" [ AddressE tokenGet, UintE amountGet, AddressE tokenGive, UintE amountGive, UintE expires, UintE nonce, AddressE user, UintE v, BytesE r, BytesE s ]
+    , data = Just <| Evm.encodeFunctionCall "amountFilled(address,uint256,address,uint256,uint256,uint256,address,uint8,bytes32,bytes32)" [ AddressE tokenGet, UintE amountGet, AddressE tokenGive, UintE amountGive, UintE expires, UintE nonce, AddressE user, UintE v, StringE r, StringE s ]
     , nonce = Nothing
-    , decoder = toElmDecoder uint
+    , decoder = toElmDecoder Evm.uint
     }
 
 
@@ -108,9 +108,9 @@ availableVolume contractAddress tokenGet amountGet tokenGive amountGive expires 
     , gas = Nothing
     , gasPrice = Nothing
     , value = Nothing
-    , data = Just <| encodeData "availableVolume(address,uint256,address,uint256,uint256,uint256,address,uint8,bytes32,bytes32)" [ AddressE tokenGet, UintE amountGet, AddressE tokenGive, UintE amountGive, UintE expires, UintE nonce, AddressE user, UintE v, BytesE r, BytesE s ]
+    , data = Just <| Evm.encodeFunctionCall "availableVolume(address,uint256,address,uint256,uint256,uint256,address,uint8,bytes32,bytes32)" [ AddressE tokenGet, UintE amountGet, AddressE tokenGive, UintE amountGive, UintE expires, UintE nonce, AddressE user, UintE v, StringE r, StringE s ]
     , nonce = Nothing
-    , decoder = toElmDecoder uint
+    , decoder = toElmDecoder Evm.uint
     }
 
 
@@ -123,9 +123,9 @@ balanceOf contractAddress token user =
     , gas = Nothing
     , gasPrice = Nothing
     , value = Nothing
-    , data = Just <| encodeData "balanceOf(address,address)" [ AddressE token, AddressE user ]
+    , data = Just <| Evm.encodeFunctionCall "balanceOf(address,address)" [ AddressE token, AddressE user ]
     , nonce = Nothing
-    , decoder = toElmDecoder uint
+    , decoder = toElmDecoder Evm.uint
     }
 
 
@@ -138,7 +138,7 @@ cancelOrder contractAddress tokenGet amountGet tokenGive amountGive expires nonc
     , gas = Nothing
     , gasPrice = Nothing
     , value = Nothing
-    , data = Just <| encodeData "cancelOrder(address,uint256,address,uint256,uint256,uint256,uint8,bytes32,bytes32)" [ AddressE tokenGet, UintE amountGet, AddressE tokenGive, UintE amountGive, UintE expires, UintE nonce, UintE v, BytesE r, BytesE s ]
+    , data = Just <| Evm.encodeFunctionCall "cancelOrder(address,uint256,address,uint256,uint256,uint256,uint8,bytes32,bytes32)" [ AddressE tokenGet, UintE amountGet, AddressE tokenGive, UintE amountGive, UintE expires, UintE nonce, UintE v, StringE r, StringE s ]
     , nonce = Nothing
     , decoder = Decode.succeed ()
     }
@@ -153,7 +153,7 @@ changeAccountLevelsAddr contractAddress accountLevelsAddr_ =
     , gas = Nothing
     , gasPrice = Nothing
     , value = Nothing
-    , data = Just <| encodeData "changeAccountLevelsAddr(address)" [ AddressE accountLevelsAddr_ ]
+    , data = Just <| Evm.encodeFunctionCall "changeAccountLevelsAddr(address)" [ AddressE accountLevelsAddr_ ]
     , nonce = Nothing
     , decoder = Decode.succeed ()
     }
@@ -168,7 +168,7 @@ changeAdmin contractAddress admin_ =
     , gas = Nothing
     , gasPrice = Nothing
     , value = Nothing
-    , data = Just <| encodeData "changeAdmin(address)" [ AddressE admin_ ]
+    , data = Just <| Evm.encodeFunctionCall "changeAdmin(address)" [ AddressE admin_ ]
     , nonce = Nothing
     , decoder = Decode.succeed ()
     }
@@ -183,7 +183,7 @@ changeFeeAccount contractAddress feeAccount_ =
     , gas = Nothing
     , gasPrice = Nothing
     , value = Nothing
-    , data = Just <| encodeData "changeFeeAccount(address)" [ AddressE feeAccount_ ]
+    , data = Just <| Evm.encodeFunctionCall "changeFeeAccount(address)" [ AddressE feeAccount_ ]
     , nonce = Nothing
     , decoder = Decode.succeed ()
     }
@@ -198,7 +198,7 @@ changeFeeMake contractAddress feeMake_ =
     , gas = Nothing
     , gasPrice = Nothing
     , value = Nothing
-    , data = Just <| encodeData "changeFeeMake(uint256)" [ UintE feeMake_ ]
+    , data = Just <| Evm.encodeFunctionCall "changeFeeMake(uint256)" [ UintE feeMake_ ]
     , nonce = Nothing
     , decoder = Decode.succeed ()
     }
@@ -213,7 +213,7 @@ changeFeeRebate contractAddress feeRebate_ =
     , gas = Nothing
     , gasPrice = Nothing
     , value = Nothing
-    , data = Just <| encodeData "changeFeeRebate(uint256)" [ UintE feeRebate_ ]
+    , data = Just <| Evm.encodeFunctionCall "changeFeeRebate(uint256)" [ UintE feeRebate_ ]
     , nonce = Nothing
     , decoder = Decode.succeed ()
     }
@@ -228,7 +228,7 @@ changeFeeTake contractAddress feeTake_ =
     , gas = Nothing
     , gasPrice = Nothing
     , value = Nothing
-    , data = Just <| encodeData "changeFeeTake(uint256)" [ UintE feeTake_ ]
+    , data = Just <| Evm.encodeFunctionCall "changeFeeTake(uint256)" [ UintE feeTake_ ]
     , nonce = Nothing
     , decoder = Decode.succeed ()
     }
@@ -243,7 +243,7 @@ deposit contractAddress =
     , gas = Nothing
     , gasPrice = Nothing
     , value = Nothing
-    , data = Just <| encodeData "deposit()" []
+    , data = Just <| Evm.encodeFunctionCall "deposit()" []
     , nonce = Nothing
     , decoder = Decode.succeed ()
     }
@@ -258,7 +258,7 @@ depositToken contractAddress token amount =
     , gas = Nothing
     , gasPrice = Nothing
     , value = Nothing
-    , data = Just <| encodeData "depositToken(address,uint256)" [ AddressE token, UintE amount ]
+    , data = Just <| Evm.encodeFunctionCall "depositToken(address,uint256)" [ AddressE token, UintE amount ]
     , nonce = Nothing
     , decoder = Decode.succeed ()
     }
@@ -273,9 +273,9 @@ feeAccount contractAddress =
     , gas = Nothing
     , gasPrice = Nothing
     , value = Nothing
-    , data = Just <| encodeData "feeAccount()" []
+    , data = Just <| Evm.encodeFunctionCall "feeAccount()" []
     , nonce = Nothing
-    , decoder = toElmDecoder address
+    , decoder = toElmDecoder Evm.address
     }
 
 
@@ -288,9 +288,9 @@ feeMake contractAddress =
     , gas = Nothing
     , gasPrice = Nothing
     , value = Nothing
-    , data = Just <| encodeData "feeMake()" []
+    , data = Just <| Evm.encodeFunctionCall "feeMake()" []
     , nonce = Nothing
-    , decoder = toElmDecoder uint
+    , decoder = toElmDecoder Evm.uint
     }
 
 
@@ -303,9 +303,9 @@ feeRebate contractAddress =
     , gas = Nothing
     , gasPrice = Nothing
     , value = Nothing
-    , data = Just <| encodeData "feeRebate()" []
+    , data = Just <| Evm.encodeFunctionCall "feeRebate()" []
     , nonce = Nothing
-    , decoder = toElmDecoder uint
+    , decoder = toElmDecoder Evm.uint
     }
 
 
@@ -318,9 +318,9 @@ feeTake contractAddress =
     , gas = Nothing
     , gasPrice = Nothing
     , value = Nothing
-    , data = Just <| encodeData "feeTake()" []
+    , data = Just <| Evm.encodeFunctionCall "feeTake()" []
     , nonce = Nothing
-    , decoder = toElmDecoder uint
+    , decoder = toElmDecoder Evm.uint
     }
 
 
@@ -333,7 +333,7 @@ order contractAddress tokenGet amountGet tokenGive amountGive expires nonce =
     , gas = Nothing
     , gasPrice = Nothing
     , value = Nothing
-    , data = Just <| encodeData "order(address,uint256,address,uint256,uint256,uint256)" [ AddressE tokenGet, UintE amountGet, AddressE tokenGive, UintE amountGive, UintE expires, UintE nonce ]
+    , data = Just <| Evm.encodeFunctionCall "order(address,uint256,address,uint256,uint256,uint256)" [ AddressE tokenGet, UintE amountGet, AddressE tokenGive, UintE amountGive, UintE expires, UintE nonce ]
     , nonce = Nothing
     , decoder = Decode.succeed ()
     }
@@ -355,7 +355,7 @@ orderFills contractAddress a b =
     , gas = Nothing
     , gasPrice = Nothing
     , value = Nothing
-    , data = Just <| encodeData "orderFills(address,bytes32)" [ AddressE a, BytesE b ]
+    , data = Just <| Evm.encodeFunctionCall "orderFills(address,bytes32)" [ AddressE a, StringE b ]
     , nonce = Nothing
     , decoder = orderFillsDecoder
     }
@@ -364,9 +364,9 @@ orderFills contractAddress a b =
 orderFillsDecoder : Decoder OrderFills
 orderFillsDecoder =
     evmDecode OrderFills
-        |> andMap uint
-        |> andMap uint
-        |> andMap uint
+        |> andMap Evm.uint
+        |> andMap Evm.uint
+        |> andMap Evm.uint
         |> toElmDecoder
 
 
@@ -379,9 +379,9 @@ orders contractAddress a b =
     , gas = Nothing
     , gasPrice = Nothing
     , value = Nothing
-    , data = Just <| encodeData "orders(address,bytes32)" [ AddressE a, BytesE b ]
+    , data = Just <| Evm.encodeFunctionCall "orders(address,bytes32)" [ AddressE a, StringE b ]
     , nonce = Nothing
-    , decoder = toElmDecoder bool
+    , decoder = toElmDecoder Evm.bool
     }
 
 
@@ -394,9 +394,9 @@ testTrade contractAddress tokenGet amountGet tokenGive amountGive expires nonce 
     , gas = Nothing
     , gasPrice = Nothing
     , value = Nothing
-    , data = Just <| encodeData "testTrade(address,uint256,address,uint256,uint256,uint256,address,uint8,bytes32,bytes32,uint256,address)" [ AddressE tokenGet, UintE amountGet, AddressE tokenGive, UintE amountGive, UintE expires, UintE nonce, AddressE user, UintE v, BytesE r, BytesE s, UintE amount, AddressE sender ]
+    , data = Just <| Evm.encodeFunctionCall "testTrade(address,uint256,address,uint256,uint256,uint256,address,uint8,bytes32,bytes32,uint256,address)" [ AddressE tokenGet, UintE amountGet, AddressE tokenGive, UintE amountGive, UintE expires, UintE nonce, AddressE user, UintE v, StringE r, StringE s, UintE amount, AddressE sender ]
     , nonce = Nothing
-    , decoder = toElmDecoder bool
+    , decoder = toElmDecoder Evm.bool
     }
 
 
@@ -409,9 +409,9 @@ tokens contractAddress a b =
     , gas = Nothing
     , gasPrice = Nothing
     , value = Nothing
-    , data = Just <| encodeData "tokens(address,address)" [ AddressE a, AddressE b ]
+    , data = Just <| Evm.encodeFunctionCall "tokens(address,address)" [ AddressE a, AddressE b ]
     , nonce = Nothing
-    , decoder = toElmDecoder uint
+    , decoder = toElmDecoder Evm.uint
     }
 
 
@@ -424,7 +424,7 @@ trade contractAddress tokenGet amountGet tokenGive amountGive expires nonce user
     , gas = Nothing
     , gasPrice = Nothing
     , value = Nothing
-    , data = Just <| encodeData "trade(address,uint256,address,uint256,uint256,uint256,address,uint8,bytes32,bytes32,uint256)" [ AddressE tokenGet, UintE amountGet, AddressE tokenGive, UintE amountGive, UintE expires, UintE nonce, AddressE user, UintE v, BytesE r, BytesE s, UintE amount ]
+    , data = Just <| Evm.encodeFunctionCall "trade(address,uint256,address,uint256,uint256,uint256,address,uint8,bytes32,bytes32,uint256)" [ AddressE tokenGet, UintE amountGet, AddressE tokenGive, UintE amountGive, UintE expires, UintE nonce, AddressE user, UintE v, StringE r, StringE s, UintE amount ]
     , nonce = Nothing
     , decoder = Decode.succeed ()
     }
@@ -439,7 +439,7 @@ withdraw contractAddress amount =
     , gas = Nothing
     , gasPrice = Nothing
     , value = Nothing
-    , data = Just <| encodeData "withdraw(uint256)" [ UintE amount ]
+    , data = Just <| Evm.encodeFunctionCall "withdraw(uint256)" [ UintE amount ]
     , nonce = Nothing
     , decoder = Decode.succeed ()
     }
@@ -454,7 +454,7 @@ withdrawToken contractAddress token amount =
     , gas = Nothing
     , gasPrice = Nothing
     , value = Nothing
-    , data = Just <| encodeData "withdrawToken(address,uint256)" [ AddressE token, UintE amount ]
+    , data = Just <| Evm.encodeFunctionCall "withdrawToken(address,uint256)" [ AddressE token, UintE amount ]
     , nonce = Nothing
     , decoder = Decode.succeed ()
     }
@@ -481,23 +481,23 @@ cancelEvent contractAddress =
     { fromBlock = LatestBlock
     , toBlock = LatestBlock
     , address = contractAddress
-    , topics = [ Just <| keccak256 "Cancel(address,uint256,address,uint256,uint256,uint256,address,uint8,bytes32,bytes32)" ]
+    , topics = [ Just <| U.keccak256 "Cancel(address,uint256,address,uint256,uint256,uint256,address,uint8,bytes32,bytes32)" ]
     }
 
 
 cancelDecoder : Decoder Cancel
 cancelDecoder = 
     decode Cancel
-        |> custom (data 0 address)
-        |> custom (data 1 uint)
-        |> custom (data 2 address)
-        |> custom (data 3 uint)
-        |> custom (data 4 uint)
-        |> custom (data 5 uint)
-        |> custom (data 6 address)
-        |> custom (data 7 uint)
-        |> custom (data 8 bytes)
-        |> custom (data 9 bytes)
+        |> custom (data 0 Evm.address)
+        |> custom (data 1 Evm.uint)
+        |> custom (data 2 Evm.address)
+        |> custom (data 3 Evm.uint)
+        |> custom (data 4 Evm.uint)
+        |> custom (data 5 Evm.uint)
+        |> custom (data 6 Evm.address)
+        |> custom (data 7 Evm.uint)
+        |> custom (data 8 Evm.string)
+        |> custom (data 9 Evm.string)
 
 
 {-| "Deposit(address,address,uint256,uint256)" event
@@ -515,17 +515,17 @@ depositEvent contractAddress =
     { fromBlock = LatestBlock
     , toBlock = LatestBlock
     , address = contractAddress
-    , topics = [ Just <| keccak256 "Deposit(address,address,uint256,uint256)" ]
+    , topics = [ Just <| U.keccak256 "Deposit(address,address,uint256,uint256)" ]
     }
 
 
 depositDecoder : Decoder Deposit
 depositDecoder = 
     decode Deposit
-        |> custom (data 0 address)
-        |> custom (data 1 address)
-        |> custom (data 2 uint)
-        |> custom (data 3 uint)
+        |> custom (data 0 Evm.address)
+        |> custom (data 1 Evm.address)
+        |> custom (data 2 Evm.uint)
+        |> custom (data 3 Evm.uint)
 
 
 {-| "Order(address,uint256,address,uint256,uint256,uint256,address)" event
@@ -547,10 +547,10 @@ orderEvent contractAddress tokenGet tokenGive user =
     , toBlock = LatestBlock
     , address = contractAddress
     , topics = 
-        [ Just <| keccak256 "Order(address,uint256,address,uint256,uint256,uint256,address)"
-        , Maybe.map (Evm.encode << AddressE) tokenGet
-        , Maybe.map (Evm.encode << AddressE) tokenGive
-        , Maybe.map (Evm.encode << AddressE) user
+        [ Just <| U.keccak256 "Order(address,uint256,address,uint256,uint256,uint256,address)"
+        , Maybe.map (evmEncode << AddressE) tokenGet
+        , Maybe.map (evmEncode << AddressE) tokenGive
+        , Maybe.map (evmEncode << AddressE) user
         ]
     }
 
@@ -558,13 +558,13 @@ orderEvent contractAddress tokenGet tokenGive user =
 orderDecoder : Decoder Order
 orderDecoder = 
     decode Order
-        |> custom (topic 1 address)
-        |> custom (data 0 uint)
-        |> custom (topic 2 address)
-        |> custom (data 1 uint)
-        |> custom (data 2 uint)
-        |> custom (data 3 uint)
-        |> custom (topic 3 address)
+        |> custom (topic 1 Evm.address)
+        |> custom (data 0 Evm.uint)
+        |> custom (topic 2 Evm.address)
+        |> custom (data 1 Evm.uint)
+        |> custom (data 2 Evm.uint)
+        |> custom (data 3 Evm.uint)
+        |> custom (topic 3 Evm.address)
 
 
 {-| "Trade(address,uint256,address,uint256,address,address)" event
@@ -584,19 +584,19 @@ tradeEvent contractAddress =
     { fromBlock = LatestBlock
     , toBlock = LatestBlock
     , address = contractAddress
-    , topics = [ Just <| keccak256 "Trade(address,uint256,address,uint256,address,address)" ]
+    , topics = [ Just <| U.keccak256 "Trade(address,uint256,address,uint256,address,address)" ]
     }
 
 
 tradeDecoder : Decoder Trade
 tradeDecoder = 
     decode Trade
-        |> custom (data 0 address)
-        |> custom (data 1 uint)
-        |> custom (data 2 address)
-        |> custom (data 3 uint)
-        |> custom (data 4 address)
-        |> custom (data 5 address)
+        |> custom (data 0 Evm.address)
+        |> custom (data 1 Evm.uint)
+        |> custom (data 2 Evm.address)
+        |> custom (data 3 Evm.uint)
+        |> custom (data 4 Evm.address)
+        |> custom (data 5 Evm.address)
 
 
 {-| "Withdraw(address,address,uint256,uint256)" event
@@ -614,16 +614,16 @@ withdrawEvent contractAddress =
     { fromBlock = LatestBlock
     , toBlock = LatestBlock
     , address = contractAddress
-    , topics = [ Just <| keccak256 "Withdraw(address,address,uint256,uint256)" ]
+    , topics = [ Just <| U.keccak256 "Withdraw(address,address,uint256,uint256)" ]
     }
 
 
 withdrawDecoder : Decoder Withdraw
 withdrawDecoder = 
     decode Withdraw
-        |> custom (data 0 address)
-        |> custom (data 1 address)
-        |> custom (data 2 uint)
-        |> custom (data 3 uint)
+        |> custom (data 0 Evm.address)
+        |> custom (data 1 Evm.address)
+        |> custom (data 2 Evm.uint)
+        |> custom (data 3 Evm.uint)
 
 

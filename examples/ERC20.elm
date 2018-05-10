@@ -22,10 +22,10 @@ module ERC20
 import BigInt exposing (BigInt)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Decode.Pipeline exposing (custom, decode)
-import Web3.Eth.Types exposing (..)
-import Web3.Evm.Decode exposing (..)
-import Web3.Evm.Encode as Evm exposing (..)
-import Web3.Utils exposing (keccak256)
+import Eth.Types exposing (..)
+import Eth.Utils as U
+import Evm.Decode as Evm exposing (evmDecode, andMap, toElmDecoder, topic, data)
+import Evm.Encode as Evm exposing (Encoding(..), evmEncode)
 
 
 {-| "allowance(address,address)" function
@@ -37,9 +37,9 @@ allowance contractAddress owner spender =
     , gas = Nothing
     , gasPrice = Nothing
     , value = Nothing
-    , data = Just <| encodeData "allowance(address,address)" [ AddressE owner, AddressE spender ]
+    , data = Just <| Evm.encodeFunctionCall "allowance(address,address)" [ AddressE owner, AddressE spender ]
     , nonce = Nothing
-    , decoder = toElmDecoder uint
+    , decoder = toElmDecoder Evm.uint
     }
 
 
@@ -52,9 +52,9 @@ allowed contractAddress a b =
     , gas = Nothing
     , gasPrice = Nothing
     , value = Nothing
-    , data = Just <| encodeData "allowed(address,address)" [ AddressE a, AddressE b ]
+    , data = Just <| Evm.encodeFunctionCall "allowed(address,address)" [ AddressE a, AddressE b ]
     , nonce = Nothing
-    , decoder = toElmDecoder uint
+    , decoder = toElmDecoder Evm.uint
     }
 
 
@@ -67,9 +67,9 @@ approve contractAddress spender value =
     , gas = Nothing
     , gasPrice = Nothing
     , value = Nothing
-    , data = Just <| encodeData "approve(address,uint256)" [ AddressE spender, UintE value ]
+    , data = Just <| Evm.encodeFunctionCall "approve(address,uint256)" [ AddressE spender, UintE value ]
     , nonce = Nothing
-    , decoder = toElmDecoder bool
+    , decoder = toElmDecoder Evm.bool
     }
 
 
@@ -82,9 +82,9 @@ balanceOf contractAddress owner =
     , gas = Nothing
     , gasPrice = Nothing
     , value = Nothing
-    , data = Just <| encodeData "balanceOf(address)" [ AddressE owner ]
+    , data = Just <| Evm.encodeFunctionCall "balanceOf(address)" [ AddressE owner ]
     , nonce = Nothing
-    , decoder = toElmDecoder uint
+    , decoder = toElmDecoder Evm.uint
     }
 
 
@@ -97,9 +97,9 @@ balances contractAddress a =
     , gas = Nothing
     , gasPrice = Nothing
     , value = Nothing
-    , data = Just <| encodeData "balances(address)" [ AddressE a ]
+    , data = Just <| Evm.encodeFunctionCall "balances(address)" [ AddressE a ]
     , nonce = Nothing
-    , decoder = toElmDecoder uint
+    , decoder = toElmDecoder Evm.uint
     }
 
 
@@ -112,9 +112,9 @@ decimals contractAddress =
     , gas = Nothing
     , gasPrice = Nothing
     , value = Nothing
-    , data = Just <| encodeData "decimals()" []
+    , data = Just <| Evm.encodeFunctionCall "decimals()" []
     , nonce = Nothing
-    , decoder = toElmDecoder uint
+    , decoder = toElmDecoder Evm.uint
     }
 
 
@@ -127,9 +127,9 @@ name contractAddress =
     , gas = Nothing
     , gasPrice = Nothing
     , value = Nothing
-    , data = Just <| encodeData "name()" []
+    , data = Just <| Evm.encodeFunctionCall "name()" []
     , nonce = Nothing
-    , decoder = toElmDecoder string
+    , decoder = toElmDecoder Evm.string
     }
 
 
@@ -142,9 +142,9 @@ symbol contractAddress =
     , gas = Nothing
     , gasPrice = Nothing
     , value = Nothing
-    , data = Just <| encodeData "symbol()" []
+    , data = Just <| Evm.encodeFunctionCall "symbol()" []
     , nonce = Nothing
-    , decoder = toElmDecoder string
+    , decoder = toElmDecoder Evm.string
     }
 
 
@@ -157,9 +157,9 @@ totalSupply contractAddress =
     , gas = Nothing
     , gasPrice = Nothing
     , value = Nothing
-    , data = Just <| encodeData "totalSupply()" []
+    , data = Just <| Evm.encodeFunctionCall "totalSupply()" []
     , nonce = Nothing
-    , decoder = toElmDecoder uint
+    , decoder = toElmDecoder Evm.uint
     }
 
 
@@ -172,9 +172,9 @@ transfer contractAddress to value =
     , gas = Nothing
     , gasPrice = Nothing
     , value = Nothing
-    , data = Just <| encodeData "transfer(address,uint256)" [ AddressE to, UintE value ]
+    , data = Just <| Evm.encodeFunctionCall "transfer(address,uint256)" [ AddressE to, UintE value ]
     , nonce = Nothing
-    , decoder = toElmDecoder bool
+    , decoder = toElmDecoder Evm.bool
     }
 
 
@@ -187,9 +187,9 @@ transferFrom contractAddress from to value =
     , gas = Nothing
     , gasPrice = Nothing
     , value = Nothing
-    , data = Just <| encodeData "transferFrom(address,address,uint256)" [ AddressE from, AddressE to, UintE value ]
+    , data = Just <| Evm.encodeFunctionCall "transferFrom(address,address,uint256)" [ AddressE from, AddressE to, UintE value ]
     , nonce = Nothing
-    , decoder = toElmDecoder bool
+    , decoder = toElmDecoder Evm.bool
     }
 
 
@@ -208,9 +208,9 @@ approvalEvent contractAddress owner spender =
     , toBlock = LatestBlock
     , address = contractAddress
     , topics = 
-        [ Just <| keccak256 "Approval(address,address,uint256)"
-        , Maybe.map (Evm.encode << AddressE) owner
-        , Maybe.map (Evm.encode << AddressE) spender
+        [ Just <| U.keccak256 "Approval(address,address,uint256)"
+        , Maybe.map (evmEncode << AddressE) owner
+        , Maybe.map (evmEncode << AddressE) spender
         ]
     }
 
@@ -218,9 +218,9 @@ approvalEvent contractAddress owner spender =
 approvalDecoder : Decoder Approval
 approvalDecoder = 
     decode Approval
-        |> custom (topic 1 address)
-        |> custom (topic 2 address)
-        |> custom (data 0 uint)
+        |> custom (topic 1 Evm.address)
+        |> custom (topic 2 Evm.address)
+        |> custom (data 0 Evm.uint)
 
 
 {-| "Transfer(address,address,uint256)" event
@@ -238,9 +238,9 @@ transferEvent contractAddress from to =
     , toBlock = LatestBlock
     , address = contractAddress
     , topics = 
-        [ Just <| keccak256 "Transfer(address,address,uint256)"
-        , Maybe.map (Evm.encode << AddressE) from
-        , Maybe.map (Evm.encode << AddressE) to
+        [ Just <| U.keccak256 "Transfer(address,address,uint256)"
+        , Maybe.map (evmEncode << AddressE) from
+        , Maybe.map (evmEncode << AddressE) to
         ]
     }
 
@@ -248,8 +248,8 @@ transferEvent contractAddress from to =
 transferDecoder : Decoder Transfer
 transferDecoder = 
     decode Transfer
-        |> custom (topic 1 address)
-        |> custom (topic 2 address)
-        |> custom (data 0 uint)
+        |> custom (topic 1 Evm.address)
+        |> custom (topic 2 Evm.address)
+        |> custom (data 0 Evm.uint)
 
 

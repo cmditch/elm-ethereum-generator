@@ -126,7 +126,7 @@ decBody isDebug (func@DFunction { funName, funOutputs, funInputs }) = sig <> dec
 
         toElmDecoder =
             if isDebug then
-                "toElmDecoderWithDebug " <> (C.methodSignature func) <> " "
+                "Evm.toElmDecoderWithDebug " <> (C.methodSignature func) <> " "
             else
                 "toElmDecoder "
 
@@ -188,7 +188,7 @@ decDecoder isDebug (func@DFunction { funName, funOutputs }) =
 
         toElmDecoder =
             if isDebug then
-                [ U.indent 2 "|> toElmDecoderWithDebug " <> C.methodSignature func ]
+                [ U.indent 2 "|> Evm.toElmDecoderWithDebug " <> C.methodSignature func ]
             else
                 [ U.indent 2 "|> toElmDecoder" ]
 
@@ -278,13 +278,13 @@ topicsBuilder :: Text -> [Arg] -> Text
 topicsBuilder sig args =
     let
         defaultTopic =
-            "Just <| keccak256 " <> sig
+            "Just <| U.keccak256 " <> sig
 
         multiTopic xs =
             defaultTopic : (makeTopic <$> xs)
 
         makeTopic arg =
-            "Maybe.map (Evm.encode << " <> encoding arg <> ") " <> nameAsInput arg
+            "Maybe.map (evmEncode << " <> encoding arg <> ") " <> nameAsInput arg
     in
         case args of
             [] -> EL.wrapArray defaultTopic

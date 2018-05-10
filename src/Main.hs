@@ -18,7 +18,7 @@ import qualified Text.PrettyPrint.ANSI.Leijen as PP
 
 version :: String
 version =
-    "0.2.0"
+    "1.0.0"
 
 
 main :: IO ()
@@ -90,17 +90,17 @@ helpInfo =
   mconcat
       [ Opt.fullDesc
       , Opt.headerDoc $ Just top
-      , Opt.progDesc "Generate elm-web3 contract interfaces from it's ABI."
+      , Opt.progDesc "Generate elm-ethereum contract interfaces from it's ABI."
       , Opt.footerDoc (Just examples)
       ]
     where
       top =
-          PP.vcat [ PP.text "elm-web3-contract v" PP.<> PP.text version ]
+          PP.vcat [ PP.text "elm-ethereum-generator v" PP.<> PP.text version ]
 
       examples =
           linesToDoc
           [ "Examples:"
-          , "  elm-web3-contract abis/StandardTokenAbi.json src/Contract/ERC20.elm"
+          , "  elm-ethereum-generator abis/StandardTokenAbi.json src/Contract/ERC20.elm"
           ]
 
 

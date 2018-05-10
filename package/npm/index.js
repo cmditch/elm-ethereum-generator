@@ -4,13 +4,13 @@ var path = require("path");
 var packageInfo = require(path.join(__dirname, "package.json"));
 var binVersion = packageInfo.version;
 
-var root = "https://github.com/cmditch/elm-web3-contract/releases/download/" +
+var root = "https://github.com/cmditch/elm-ethereum-generator/releases/download/" +
   binVersion +
-  "/elm-web3-contract-" +
+  "/elm-ethereum-generator-" +
   binVersion;
 
 module.exports = binwrap({
-  binaries: ["elm-web3-contract"],
+  binaries: ["elm-ethereum-generator"],
   urls: {
     "darwin-x64": root + "-mac-x64.tgz"
   }

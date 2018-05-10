@@ -15,14 +15,12 @@ import           Utils           (paramAlphabet, sanitizeName, textLowerFirst)
 -- TODO: Support fixed sized array types, e.g. address[3]
 -- TODO: Support all bytes sizes, e.g. bytes32 or bytes5
 
--- | Convert Solidity type in ABI to elm-web3 type
+-- | Convert Solidity type in ABI to elm-ethereum type
 getElmType :: Text -> Text
-getElmType "address"  = "Address"
-getElmType "bool"     = "Bool"
-getElmType "bytes"    = "String"
-getElmType "string"   = "String"
-getElmType "bytes32"   = "String"
-getElmType "bytes4"   = "String"
+getElmType "address"   = "Address"
+getElmType "bool"      = "Bool"
+getElmType "bytes"     = "String"
+getElmType "string"    = "String"
 getElmType tipe | Text.isPrefixOf "uint" tipe && Text.isSuffixOf "[]" tipe = "List BigInt"
                 | Text.isPrefixOf "bool" tipe && Text.isSuffixOf "[]" tipe = "List Bool"
                 | Text.isPrefixOf "address" tipe && Text.isSuffixOf "[]" tipe = "List Address"
@@ -33,17 +31,15 @@ getElmType tipe | Text.isPrefixOf "uint" tipe && Text.isSuffixOf "[]" tipe = "Li
 
 -- | Get elm decoder for solidity type
 getDecoder :: Text -> Text
-getDecoder "address" = "address"
-getDecoder "bool"    = "bool"
-getDecoder "bytes"   = "dBytes"
-getDecoder "string"  = "string"
-getDecoder "bytes32"  = "string"
-getDecoder "bytes4"  = "string"
-getDecoder tipe | Text.isPrefixOf "uint" tipe && Text.isSuffixOf "[]" tipe = "(dArray uint)"
-                | Text.isPrefixOf "bool" tipe && Text.isSuffixOf "[]" tipe = "(dArray bool)"
-                | Text.isPrefixOf "address" tipe && Text.isSuffixOf "[]" tipe = "(dArray address)"
-                | Text.isPrefixOf "uint" tipe = "uint"
-                | Text.isPrefixOf "string" tipe = "string"
+getDecoder "address"  = "Evm.address"
+getDecoder "bool"     = "Evm.bool"
+getDecoder "bytes"    = "Evm.dynamicBytes"
+getDecoder "string"   = "Evm.string"
+getDecoder tipe | Text.isPrefixOf "uint" tipe && Text.isSuffixOf "[]" tipe = "(Evm.dynamicArray Evm.uint)"
+                | Text.isPrefixOf "bool" tipe && Text.isSuffixOf "[]" tipe = "(Evm.dynamicArray Evm.bool)"
+                | Text.isPrefixOf "address" tipe && Text.isSuffixOf "[]" tipe = "(Evm.dynamicArray Evm.address)"
+                | Text.isPrefixOf "uint" tipe = "Evm.uint"
+                | Text.isPrefixOf "string" tipe = "Evm.string"
                 | otherwise = tipe <> "-ERROR!"
 
 
@@ -53,8 +49,6 @@ getEncodingType "address"  = "AddressE"
 getEncodingType "bool"     = "BoolE"
 getEncodingType "bytes"    = "DBytesE"
 getEncodingType "string"   = "StringE"
-getEncodingType "bytes32"   = "StringE"
-getEncodingType "bytes4"   = "StringE"
 getEncodingType tipe | Text.isPrefixOf "uint" tipe && Text.isSuffixOf "[]" tipe = "ListE UintE"
                      | Text.isPrefixOf "bool" tipe && Text.isSuffixOf "[]" tipe = "ListE BoolE"
                      | Text.isPrefixOf "address" tipe && Text.isSuffixOf "[]" tipe = "ListE AddressE"

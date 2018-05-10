@@ -30,10 +30,10 @@ imports =
     [ "import BigInt exposing (BigInt)"
     , "import Json.Decode as Decode exposing (Decoder)"
     , "import Json.Decode.Pipeline exposing (custom, decode)"
-    , "import Web3.Eth.Types exposing (..)"
-    , "import Web3.Evm.Decode exposing (..)"
-    , "import Web3.Evm.Encode as Evm exposing (..)"
-    , "import Web3.Utils exposing (keccak256)"
+    , "import Eth.Types exposing (..)"
+    , "import Eth.Utils as U"
+    , "import Evm.Decode as Evm exposing (evmDecode, andMap, toElmDecoder, topic, data)"
+    , "import Evm.Encode as Evm exposing (Encoding(..), evmEncode)"
     , ""
     , ""
     ]
@@ -45,9 +45,9 @@ callBuilder isDebug sig encodings decoder =
     let
         encodeDataFunc =
             if isDebug then
-                " encodeData "
+                " Evm.encodeFunctionCallWithDebug "
             else
-                " encodeDataWithDebug "
+                " Evm.encodeFunctionCall "
     in
     [ "{ to = Just contractAddress"
     , ", from = Nothing"
