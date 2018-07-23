@@ -22,24 +22,28 @@ getElmType "bool"      = "Bool"
 getElmType "bytes"     = "String"
 getElmType "string"    = "String"
 getElmType tipe | Text.isPrefixOf "uint" tipe && Text.isSuffixOf "[]" tipe = "List BigInt"
+                | Text.isPrefixOf "int" tipe && Text.isSuffixOf "[]" tipe = "List BigInt"
                 | Text.isPrefixOf "bool" tipe && Text.isSuffixOf "[]" tipe = "List Bool"
                 | Text.isPrefixOf "address" tipe && Text.isSuffixOf "[]" tipe = "List Address"
                 | Text.isPrefixOf "uint" tipe = "BigInt"
+                | Text.isPrefixOf "int" tipe = "BigInt"
                 | Text.isPrefixOf "string" tipe = "String"
                 | otherwise = tipe <> "-ERROR!"
 
 
 -- | Get elm decoder for solidity type
 getDecoder :: Text -> Text
-getDecoder "address"  = "Evm.address"
-getDecoder "bool"     = "Evm.bool"
-getDecoder "bytes"    = "Evm.dynamicBytes"
-getDecoder "string"   = "Evm.string"
-getDecoder tipe | Text.isPrefixOf "uint" tipe && Text.isSuffixOf "[]" tipe = "(Evm.dynamicArray Evm.uint)"
-                | Text.isPrefixOf "bool" tipe && Text.isSuffixOf "[]" tipe = "(Evm.dynamicArray Evm.bool)"
-                | Text.isPrefixOf "address" tipe && Text.isSuffixOf "[]" tipe = "(Evm.dynamicArray Evm.address)"
-                | Text.isPrefixOf "uint" tipe = "Evm.uint"
-                | Text.isPrefixOf "string" tipe = "Evm.string"
+getDecoder "address"  = "Abi.address"
+getDecoder "bool"     = "Abi.bool"
+getDecoder "bytes"    = "Abi.dynamicBytes"
+getDecoder "string"   = "Abi.string"
+getDecoder tipe | Text.isPrefixOf "uint" tipe && Text.isSuffixOf "[]" tipe = "(Abi.dynamicArray Abi.uint)"
+                | Text.isPrefixOf "int" tipe && Text.isSuffixOf "[]" tipe = "(Abi.dynamicArray Abi.int)"
+                | Text.isPrefixOf "bool" tipe && Text.isSuffixOf "[]" tipe = "(Abi.dynamicArray Abi.bool)"
+                | Text.isPrefixOf "address" tipe && Text.isSuffixOf "[]" tipe = "(Abi.dynamicArray Abi.address)"
+                | Text.isPrefixOf "uint" tipe = "Abi.uint"
+                | Text.isPrefixOf "int" tipe = "Abi.int"
+                | Text.isPrefixOf "string" tipe = "Abi.string"
                 | otherwise = tipe <> "-ERROR!"
 
 
@@ -50,9 +54,11 @@ getEncodingType "bool"     = "BoolE"
 getEncodingType "bytes"    = "DBytesE"
 getEncodingType "string"   = "StringE"
 getEncodingType tipe | Text.isPrefixOf "uint" tipe && Text.isSuffixOf "[]" tipe = "ListE UintE"
+                     | Text.isPrefixOf "int" tipe && Text.isSuffixOf "[]" tipe = "ListE IntE"
                      | Text.isPrefixOf "bool" tipe && Text.isSuffixOf "[]" tipe = "ListE BoolE"
                      | Text.isPrefixOf "address" tipe && Text.isSuffixOf "[]" tipe = "ListE AddressE"
                      | Text.isPrefixOf "uint" tipe = "UintE"
+                     | Text.isPrefixOf "int" tipe = "IntE"
                      | otherwise = tipe <> "-ERROR!"
 
 
@@ -87,6 +93,7 @@ eventDecoderName t =
 
 
 -- | The below functions/class helps normalize data for unnamed inputs/outputs
+
 data Arg = Arg  { elmType      :: Text
                 , nameAsInput  :: Text
                 , nameAsOutput :: Text
@@ -118,9 +125,10 @@ eventTuple (i, EventArg { eveArgName, eveArgType, eveArgIndexed }) = (i, (eveArg
 
 
 rename :: (Int, (Text, Text, Bool)) -> Arg
-rename (index, (argName, argType, isIndexed)) = case argName of
-    "" ->  Arg type' nInput nOutput indexT decoder encoder isIndexed
-    _  ->  Arg type' (sanitizeName argName) (sanitizeName argName) argName decoder encoder isIndexed
+rename (index, (argName, argType, isIndexed)) =
+    case argName of
+        "" ->  Arg type' nInput nOutput indexT decoder encoder isIndexed
+        _  ->  Arg type' (sanitizeName argName) (sanitizeName argName) argName decoder encoder isIndexed
     where
         indexT  = Text.pack (show index)
         type'   = getElmType argType

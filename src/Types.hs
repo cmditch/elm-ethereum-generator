@@ -10,8 +10,8 @@ import           Utils          (toLowerFirst)
 
 
 data FunctionArg = FunctionArg
-    { funArgName :: Text
-    , funArgType :: Text
+    { funArgName :: !Text
+    , funArgType :: !Text
     } deriving (Show, Eq, Ord)
 
 
@@ -21,9 +21,9 @@ $(deriveJSON
 
 
 data EventArg = EventArg
-    { eveArgName    :: Text
-    , eveArgType    :: Text
-    , eveArgIndexed :: Bool
+    { eveArgName    :: !Text
+    , eveArgType    :: !Text
+    , eveArgIndexed :: !Bool
     } deriving (Show, Eq, Ord)
 
 
@@ -33,26 +33,26 @@ $(deriveJSON
 
 
 data Declaration
-    = DConstructor  { conInputs          :: [FunctionArg]
-                    , conPayable         :: Bool
-                    , conStateMutability :: Text
+    = DConstructor  { conInputs          :: ![FunctionArg]
+                    , conPayable         :: !Bool
+                    , conStateMutability :: !Text
                     }
 
-    | DFunction     { funName            :: Text
-                    , funConstant        :: Bool
-                    , funInputs          :: [FunctionArg]
-                    , funOutputs         :: [FunctionArg]
-                    , funPayable         :: Bool
-                    , funStateMutability :: Text
+    | DFunction     { funName            :: !Text
+                    , funConstant        :: !Bool
+                    , funInputs          :: ![FunctionArg]
+                    , funOutputs         :: ![FunctionArg]
+                    , funPayable         :: !Bool
+                    , funStateMutability :: !Text
                     }
 
-    | DEvent        { eveName      :: Text
-                    , eveInputs    :: [EventArg]
-                    , eveAnonymous :: Bool
+    | DEvent        { eveName      :: !Text
+                    , eveInputs    :: ![EventArg]
+                    , eveAnonymous :: !Bool
                     }
 
-    | AFallback     { falPayable         :: Bool
-                    , falStateMutability :: Text
+    | AFallback     { falPayable         :: !Bool
+                    , falStateMutability :: !Text
                     }
     deriving (Show, Ord, Eq)
 

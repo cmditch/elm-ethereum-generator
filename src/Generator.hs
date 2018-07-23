@@ -52,7 +52,7 @@ decExports :: Declaration -> [Text]
 decExports DFunction { funName, funOutputs } =
     let
         decoderName = funName <> "Decoder"
-        typeAlias = U.textUpperFirst funName
+        typeAlias = typeAliasName funName
     in
         case funOutputs of
             []  -> [ funName ]
@@ -63,7 +63,7 @@ decExports DEvent { eveName } =
     let
         logFilterName = U.textLowerFirst eveName <> "Event"
         decoderName = U.textLowerFirst eveName <> "Decoder"
-        typeAlias = U.textUpperFirst eveName
+        typeAlias = typeAliasName eveName
     in
         [ typeAlias, logFilterName, decoderName ]
 
@@ -89,12 +89,12 @@ decComment _ = []
 
 -}
 decTypeAlias :: Declaration -> [Text]
-decTypeAlias DEvent { eveName, eveInputs } = EL.typeAlias (U.textUpperFirst eveName) (C.normalize eveInputs)
+decTypeAlias DEvent { eveName, eveInputs } = EL.typeAlias (typeAliasName eveName) (C.normalize eveInputs)
 decTypeAlias DFunction { funName, funOutputs } =
     case funOutputs of
         []  -> []
         [_] -> []
-        _   -> EL.typeAlias (U.textUpperFirst funName) (C.normalize funOutputs)
+        _   -> EL.typeAlias (typeAliasName funName) (C.normalize funOutputs)
 decTypeAlias _ = []
 
 
@@ -126,7 +126,7 @@ decBody isDebug (func@DFunction { funName, funOutputs, funInputs }) = sig <> dec
 
         toElmDecoder =
             if isDebug then
-                "Evm.toElmDecoderWithDebug " <> (C.methodSignature func) <> " "
+                "Abi.toElmDecoderWithDebug " <> (C.methodSignature func) <> " "
             else
                 "toElmDecoder "
 
@@ -170,14 +170,14 @@ decDecoder :: Bool -> Declaration -> [Text]
 
     someCallDecoder : Decoder SomeCall
     someCallDecoder =
-        evmDecode SomeEvent
+        abiDecode SomeEvent
             |> andMap address
             |> andMap uint
             |> toElmDecoder
 -}
 decDecoder isDebug (func@DFunction { funName, funOutputs }) =
     let
-        sig = [ funName <> "Decoder : Decoder " <>  U.textUpperFirst funName ]
+        sig = [ funName <> "Decoder : Decoder " <>  typeAliasName funName ]
 
         declaration = [ funName <> "Decoder =" ]
 
@@ -188,13 +188,13 @@ decDecoder isDebug (func@DFunction { funName, funOutputs }) =
 
         toElmDecoder =
             if isDebug then
-                [ U.indent 2 "|> Evm.toElmDecoderWithDebug " <> C.methodSignature func ]
+                [ U.indent 2 "|> Abi.toElmDecoderWithDebug " <> C.methodSignature func ]
             else
                 [ U.indent 2 "|> toElmDecoder" ]
 
 
 
-        body = [ U.indent 1 ("evmDecode " <> U.textUpperFirst funName) ]
+        body = [ U.indent 1 ("abiDecode " <> typeAliasName funName) ]
                 <> ( U.indent 2 <$> decoderPipline )
                 <> toElmDecoder
 
@@ -214,13 +214,13 @@ decDecoder isDebug (func@DFunction { funName, funOutputs }) =
 -}
 decDecoder isDebug (DEvent { eveName, eveInputs }) =
     let
-        sig = [ U.textLowerFirst eveName <> "Decoder : Decoder " <> U.textUpperFirst eveName ]
+        sig = [ U.textLowerFirst eveName <> "Decoder : Decoder " <> typeAliasName eveName ]
 
         declaration = [ U.textLowerFirst eveName <> "Decoder = " ]
 
         body =
             map (U.indent 1)
-            ([ "decode " <> U.textUpperFirst eveName ] <> eventPipelineBuilder (1,0) (C.normalize eveInputs) [])
+            ([ "decode " <> typeAliasName eveName ] <> eventPipelineBuilder (1,0) (C.normalize eveInputs) [])
 
         toPipeline tipe n arg = U.indent 1 $
             "|> custom ("
@@ -269,7 +269,7 @@ funcTypeSig DFunction { funName, funInputs, funOutputs } = [ typeSig ]
                 o = case C.normalize funOutputs of
                     []  -> "()"
                     [x] -> elmType x
-                    _   -> U.textUpperFirst funName
+                    _   -> typeAliasName funName
 
 
 -- | Generates the "topics" field within a Logfilter
@@ -284,8 +284,14 @@ topicsBuilder sig args =
             defaultTopic : (makeTopic <$> xs)
 
         makeTopic arg =
-            "Maybe.map (evmEncode << " <> encoding arg <> ") " <> nameAsInput arg
+            "Maybe.map (abiEncode << " <> encoding arg <> ") " <> nameAsInput arg
     in
         case args of
             [] -> EL.wrapArray defaultTopic
             xs -> EL.multiLineArray $ multiTopic xs
+
+
+--
+typeAliasName :: Text -> Text
+typeAliasName name  | Text.isSuffixOf "s" name = U.textUpperFirst $ Text.dropEnd 1 name
+                    | otherwise = U.textUpperFirst name

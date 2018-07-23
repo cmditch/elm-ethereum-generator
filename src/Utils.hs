@@ -63,11 +63,11 @@ indent n t =
 
 
 -- | Used to generate parameter names
--- | "!" is 17th letter to cause Elm compiler to fail if function inputs > 16
+-- | "*!*" is 17th letter to cause Elm compiler to fail if function inputs > 16
 -- | Due to stack limitations on the EVM
 paramAlphabet :: String
 paramAlphabet =
-    ['a' .. 'p'] <> "!"
+    ['a' .. 'p'] <> "*!*"
 
 -- | "~/some/path/ERC20.elm" to "ERC20"
 getFileName :: FilePath -> Text
