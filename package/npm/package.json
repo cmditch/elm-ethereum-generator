@@ -1,13 +1,14 @@
 {
   "name": "elm-ethereum-generator",
-  "version": "1.1.0",
+  "version": "2.0.0",
   "description": "Install elm-ethereum-generator",
   "preferGlobal": true,
   "main": "index.js",
   "scripts": {
     "install": "binwrap-install",
     "test": "binwrap-test",
-    "prepublish": "npm test"
+    "prepublish": "npm test",
+    "examples": "elm-ethereum-generator ../../examples/erc20.json ../../examples/ERC20.elm && elm-ethereum-generator ../../examples/ether-delta.json ../../examples/EtherDelta.elm && elm-ethereum-generator ../../examples/SaiTub.json ../../examples/SaiTub.elm"
   },
   "files": [
     "index.js",

@@ -212,7 +212,7 @@ decDecoder isDebug (func@DFunction { funName, funOutputs }) =
             |> custom (topic 1 uint)
             |> custom (data 0 address)
 -}
-decDecoder isDebug (DEvent { eveName, eveInputs }) =
+decDecoder _ (DEvent { eveName, eveInputs }) =
     let
         sig = [ U.textLowerFirst eveName <> "Decoder : Decoder " <> typeAliasName eveName ]
 
@@ -293,5 +293,6 @@ topicsBuilder sig args =
 
 --
 typeAliasName :: Text -> Text
-typeAliasName name  | Text.isSuffixOf "s" name = U.textUpperFirst $ Text.dropEnd 1 name
+typeAliasName name  | Text.isSuffixOf "ies" name = (U.textUpperFirst $ Text.dropEnd 1 name) <> "y"
+                    | Text.isSuffixOf "s" name = U.textUpperFirst $ Text.dropEnd 1 name
                     | otherwise = U.textUpperFirst name

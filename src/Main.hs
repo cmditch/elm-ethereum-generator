@@ -18,7 +18,7 @@ import qualified Text.PrettyPrint.ANSI.Leijen as PP
 
 version :: String
 version =
-    "1.1.0"
+    "2.0.0"
 
 
 main :: IO ()

@@ -2,6 +2,8 @@
 
 module Generator.Templates
     ( moduleNameAndExports
+    , encodeModuleName
+    , decodeModuleName
     , imports
     , callBuilder
     , logFilterBuilder
@@ -24,6 +26,14 @@ moduleNameAndExports name (x:xs) =
         ] <> (exportHelper <$> xs) <> [ U.indent 2 ")\n" ]
 
 
+encodeModuleName :: Text
+encodeModuleName = "AbiEncode"
+
+
+decodeModuleName :: Text
+decodeModuleName = "AbiDecode"
+
+
 -- | Elm imports
 imports :: [Text]
 imports =
@@ -32,8 +42,8 @@ imports =
     , "import Json.Decode.Pipeline exposing (custom, decode)"
     , "import Eth.Types exposing (..)"
     , "import Eth.Utils as U"
-    , "import Abi.Decode as Abi exposing (abiDecode, andMap, toElmDecoder, topic, data)"
-    , "import Abi.Encode as Abi exposing (Encoding(..), abiEncode)"
+    , "import Abi.Decode as " <> decodeModuleName <> " exposing (abiDecode, andMap, toElmDecoder, topic, data)"
+    , "import Abi.Encode as " <> encodeModuleName <> " exposing (Encoding(..), abiEncode)"
     , ""
     , ""
     , "{-"
@@ -52,9 +62,9 @@ callBuilder isDebug sig encodings decoder =
     let
         encodeDataFunc =
             if isDebug then
-                " Abi.encodeFunctionCallWithDebug "
+                " " <> encodeModuleName <> ".functionCallWithDebug "
             else
-                " Abi.encodeFunctionCall "
+                " " <> encodeModuleName <> ".functionCall "
     in
     [ "{ to = Just contractAddress"
     , ", from = Nothing"

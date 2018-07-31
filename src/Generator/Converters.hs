@@ -4,13 +4,14 @@
 
 module Generator.Converters where
 
-import           Data.List.Index (indexed)
-import           Data.Monoid     ((<>))
-import           Data.Text.Lazy  (Text)
-import qualified Data.Text.Lazy  as Text
-import           Types
-import           Utils           (paramAlphabet, sanitizeName, textLowerFirst)
+import           Data.List.Index     (indexed)
+import           Data.Monoid         ((<>))
+import           Data.Text.Lazy      (Text)
+import qualified Data.Text.Lazy      as Text
 
+import           Generator.Templates (decodeModuleName, encodeModuleName)
+import           Types
+import qualified Utils
 
 -- TODO: Support fixed sized array types, e.g. address[3]
 -- TODO: Support all bytes sizes, e.g. bytes32 or bytes5
@@ -25,44 +26,51 @@ getElmType tipe | Text.isPrefixOf "uint" tipe && Text.isSuffixOf "[]" tipe = "Li
                 | Text.isPrefixOf "int" tipe && Text.isSuffixOf "[]" tipe = "List BigInt"
                 | Text.isPrefixOf "bool" tipe && Text.isSuffixOf "[]" tipe = "List Bool"
                 | Text.isPrefixOf "address" tipe && Text.isSuffixOf "[]" tipe = "List Address"
+                | (Text.isPrefixOf "bytes" tipe) && (not $ Text.isSuffixOf "]" tipe) = "String" -- TODO Check for numbers on end instead of (not list)
                 | Text.isPrefixOf "uint" tipe = "BigInt"
                 | Text.isPrefixOf "int" tipe = "BigInt"
                 | Text.isPrefixOf "string" tipe = "String"
-                | otherwise = tipe <> "-ERROR!"
+                | otherwise = tipe <> unsupportedError
 
 
 -- | Get elm decoder for solidity type
 getDecoder :: Text -> Text
-getDecoder "address"  = "Abi.address"
-getDecoder "bool"     = "Abi.bool"
-getDecoder "bytes"    = "Abi.dynamicBytes"
-getDecoder "string"   = "Abi.string"
-getDecoder tipe | Text.isPrefixOf "uint" tipe && Text.isSuffixOf "[]" tipe = "(Abi.dynamicArray Abi.uint)"
-                | Text.isPrefixOf "int" tipe && Text.isSuffixOf "[]" tipe = "(Abi.dynamicArray Abi.int)"
-                | Text.isPrefixOf "bool" tipe && Text.isSuffixOf "[]" tipe = "(Abi.dynamicArray Abi.bool)"
-                | Text.isPrefixOf "address" tipe && Text.isSuffixOf "[]" tipe = "(Abi.dynamicArray Abi.address)"
-                | Text.isPrefixOf "uint" tipe = "Abi.uint"
-                | Text.isPrefixOf "int" tipe = "Abi.int"
-                | Text.isPrefixOf "string" tipe = "Abi.string"
-                | otherwise = tipe <> "-ERROR!"
+getDecoder "address"  = decodeModuleName <> ".address"
+getDecoder "bool"     = decodeModuleName <> ".bool"
+getDecoder "bytes"    = decodeModuleName <> ".dynamicBytes"
+getDecoder "string"   = decodeModuleName <> ".string"
+getDecoder tipe | Text.isPrefixOf "uint" tipe && Text.isSuffixOf "[]" tipe = "(" <> decodeModuleName <> ".dynamicArray " <> decodeModuleName <> ".uint)"
+                | Text.isPrefixOf "int" tipe && Text.isSuffixOf "[]" tipe = "(" <> decodeModuleName <> ".dynamicArray " <> decodeModuleName <> ".int)"
+                | Text.isPrefixOf "bool" tipe && Text.isSuffixOf "[]" tipe = "(" <> decodeModuleName <> ".dynamicArray " <> decodeModuleName <> ".bool)"
+                | Text.isPrefixOf "address" tipe && Text.isSuffixOf "[]" tipe = "(" <> decodeModuleName <> ".dynamicArray " <> decodeModuleName <> ".address)"
+                | (Text.isPrefixOf "bytes" tipe) && (not $ Text.isSuffixOf "]" tipe) = decodeModuleName <> ".staticBytes manually-enter-length-for-now-sry" -- TODO Check for numbers on end instead of (not list)
+                | Text.isPrefixOf "uint" tipe = decodeModuleName <> ".uint"
+                | Text.isPrefixOf "int" tipe = decodeModuleName <> ".int"
+                | Text.isPrefixOf "string" tipe = decodeModuleName <> ".string"
+                | otherwise = tipe <> unsupportedError
 
 
 -- | Get elm enocder for solidity type
 getEncodingType :: Text -> Text
-getEncodingType "address"  = "AddressE"
-getEncodingType "bool"     = "BoolE"
-getEncodingType "bytes"    = "DBytesE"
-getEncodingType "string"   = "StringE"
-getEncodingType tipe | Text.isPrefixOf "uint" tipe && Text.isSuffixOf "[]" tipe = "ListE UintE"
-                     | Text.isPrefixOf "int" tipe && Text.isSuffixOf "[]" tipe = "ListE IntE"
-                     | Text.isPrefixOf "bool" tipe && Text.isSuffixOf "[]" tipe = "ListE BoolE"
-                     | Text.isPrefixOf "address" tipe && Text.isSuffixOf "[]" tipe = "ListE AddressE"
-                     | Text.isPrefixOf "uint" tipe = "UintE"
-                     | Text.isPrefixOf "int" tipe = "IntE"
-                     | otherwise = tipe <> "-ERROR!"
+getEncodingType "address"  = encodeModuleName <> ".address"
+getEncodingType "bool"     = encodeModuleName <> ".bool"
+-- getEncodingType "bytes"    = encodeModuleName <> "."
+-- getEncodingType "string"   = encodeModuleName <> ".string"
+getEncodingType tipe | (Text.isPrefixOf "bytes" tipe) && (not $ Text.isSuffixOf "]" tipe) = encodeModuleName <> ".staticBytes manually-enter-length-for-now-sry" -- TODO Check for numbers on end instead of (not list)
+                    --  | Text.isPrefixOf "uint" tipe && Text.isSuffixOf "[]" tipe = "ListE UintE"
+                    --  | Text.isPrefixOf "int" tipe && Text.isSuffixOf "[]" tipe = "ListE IntE"
+                    --  | Text.isPrefixOf "bool" tipe && Text.isSuffixOf "[]" tipe = "ListE BoolE"
+                    --  | Text.isPrefixOf "address" tipe && Text.isSuffixOf "[]" tipe = "ListE AddressE"
+                     | Text.isPrefixOf "uint" tipe = encodeModuleName <> ".uint"
+                     | Text.isPrefixOf "int" tipe = encodeModuleName <> ".int"
+                     | otherwise = tipe <> unsupportedError
 
 
--- | orders(address,bytes32) == [ AddressE a, BytesE b ]
+unsupportedError :: Text
+unsupportedError = "-UNSUPPORTED-plz-open-github-issue"
+
+
+-- | orders(address,bytes32) == [ AbiEncode.address a, AbiEncode.staticBytes b ]
 callDataEncodings :: Arg -> Text
 callDataEncodings Arg { nameAsInput, encoding } =
     encoding <> " " <>  nameAsInput
@@ -89,7 +97,7 @@ outputRecord Arg { nameAsOutput, elmType } =
 
 eventDecoderName :: Text -> Text
 eventDecoderName t =
-    textLowerFirst t <> "Decoder"
+    Utils.textLowerFirst t <> "Decoder"
 
 
 -- | The below functions/class helps normalize data for unnamed inputs/outputs
@@ -128,7 +136,7 @@ rename :: (Int, (Text, Text, Bool)) -> Arg
 rename (index, (argName, argType, isIndexed)) =
     case argName of
         "" ->  Arg type' nInput nOutput indexT decoder encoder isIndexed
-        _  ->  Arg type' (sanitizeName argName) (sanitizeName argName) argName decoder encoder isIndexed
+        _  ->  Arg type' (Utils.sanitizeName argName) (Utils.sanitizeName argName) argName decoder encoder isIndexed
     where
         indexT  = Text.pack (show index)
         type'   = getElmType argType
@@ -140,4 +148,4 @@ rename (index, (argName, argType, isIndexed)) =
 
 alphabetInt :: Int -> Text
 alphabetInt i =
-    Text.singleton $ paramAlphabet !! i
+    Text.singleton $ Utils.paramAlphabet !! i
