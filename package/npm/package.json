@@ -37,6 +37,6 @@
     "elm-ethereum-generator": "bin/elm-ethereum-generator"
   },
   "dependencies": {
-    "binwrap": "^0.1.4"
+    "binwrap": "^0.2.1"
   }
 }
