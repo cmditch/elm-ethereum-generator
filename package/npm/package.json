@@ -1,6 +1,6 @@
 {
   "name": "elm-ethereum-generator",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "description": "Install elm-ethereum-generator",
   "preferGlobal": true,
   "main": "index.js",
@@ -8,7 +8,7 @@
     "install": "binwrap-install",
     "test": "binwrap-test",
     "prepublish": "npm test",
-    "examples": "elm-ethereum-generator ../../examples/erc20.json ../../examples/ERC20.elm && elm-ethereum-generator ../../examples/ether-delta.json ../../examples/EtherDelta.elm && elm-ethereum-generator ../../examples/SaiTub.json ../../examples/SaiTub.elm"
+    "examples": "elm-ethereum-generator ../../examples/erc20.abi ../../examples/ERC20.elm && elm-ethereum-generator ../../examples/ether-delta.abi ../../examples/EtherDelta.elm && elm-ethereum-generator ../../examples/SaiTub.abi ../../examples/SaiTub.elm"
   },
   "files": [
     "index.js",
@@ -34,7 +34,7 @@
   },
   "homepage": "https://github.com/cmditch/elm-ethereum-generator",
   "bin": {
-    "elm-web3-contract": "bin/elm-ethereum-generator"
+    "elm-ethereum-generator": "bin/elm-ethereum-generator"
   },
   "dependencies": {
     "binwrap": "^0.1.4"
