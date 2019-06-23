@@ -6,6 +6,11 @@ Example usage:
 
 ## Changelog
 
+## 3.0.0
+
+- Updated to latest version of elm-ethereum and elm 0.19 
+- Added support for dynamic types (bytes, string, list)
+
 ### 2.0.0
 
 - Changed imports from Abi to AbiEncode and AbiDecode
