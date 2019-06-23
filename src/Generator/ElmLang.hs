@@ -5,16 +5,14 @@ module Generator.ElmLang
     , wrapArray
     , multiLineArray
     , wrapQuotes
-    , docComment
     , multiLineRecord
     , singleLineRecord
     , typeAlias
     ) where
 
 import           Data.Monoid          ((<>))
-import           Data.Text.Lazy       (Text)
-import qualified Data.Text.Lazy       as Text
-import qualified Generator.Converters as C
+import           Data.Text            (Text)
+import qualified Data.Text            as Text
 import           Utils                (indent)
 
 
@@ -44,11 +42,6 @@ multiLineArray fields =
 wrapQuotes :: Text -> Text
 wrapQuotes t = "\"" <> t <> "\""
 
-
-docComment :: Text -> [Text]
-docComment t =
-    ["{-| " <> t <> "\n-}"]
-
 -- |
 -- |     { a : String
 -- |     , b : Int
@@ -64,16 +57,14 @@ multiLineRecord fields =
 singleLineRecord :: [Text] -> Text
 singleLineRecord []     = "_"
 singleLineRecord [""]   = "_"  -- Text.intercalate will output empty string on empty list. Bug started at Generator.contractOperations
-singleLineRecord fields = "{ " <> Text.intercalate ", " fields <> " }"
+singleLineRecord fields = "{ " <> (Text.intercalate ", " fields) <> " }"
 
 
 -- | Generate type alias if multi-data output
 -- | TODO get rid of newlines by outputting declarationBody properly (see how events are being output)
-typeAlias :: Text -> [C.Arg] -> [Text]
+typeAlias :: Text -> [Text] -> [Text]
 typeAlias name outputs =
     case outputs of
         []  -> []
-        [x] -> ["type alias " <> name <> " =", indent 1 $ singleLineRecord [C.outputRecord x] ]
-        xs  -> [ "type alias " <> name <> " ="
-               <> multiLineRecord (C.outputRecord <$> xs)
-               ]
+        [x] -> [ "type alias " <> name <> " =", indent 1 $ singleLineRecord [x] ]
+        xs  -> [ "type alias " <> name <> " =" <> multiLineRecord xs ]
