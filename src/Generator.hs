@@ -3,15 +3,16 @@
 
 module Generator (generate) where
 
-import qualified Data.List            as List
 import           Data.Monoid          ((<>))
-import           Data.Text.Lazy       (Text)
-import qualified Data.Text.Lazy       as Text
+import           Data.Text            (Text)
 import           Generator.Converters (Arg (..))
+import           Types
+
+import qualified Data.Text            as Text
+import qualified Data.List            as List
 import qualified Generator.Converters as C
 import qualified Generator.ElmLang    as EL
 import qualified Generator.Templates  as T
-import           Types
 import qualified Utils                as U
 
 
@@ -77,8 +78,8 @@ decExports _ = []
 
 -}
 decComment :: Declaration -> [Text]
-decComment func@DFunction{} = EL.docComment $ C.methodSignature func <> " function"
-decComment event@DEvent{}   = EL.docComment $ C.methodSignature event <> " event"
+decComment func@DFunction{} = ["-- " <> C.methodSignature func <> " function\n\n"]
+decComment event@DEvent{}   = ["-- " <> C.methodSignature event <> " event\n\n"]
 decComment _ = []
 
 
@@ -89,12 +90,12 @@ decComment _ = []
 
 -}
 decTypeAlias :: Declaration -> [Text]
-decTypeAlias DEvent { eveName, eveInputs } = EL.typeAlias (typeAliasName eveName) (C.normalize eveInputs)
+decTypeAlias DEvent { eveName, eveInputs } = EL.typeAlias (typeAliasName eveName) (C.outputRecord <$> C.normalize eveInputs)
 decTypeAlias DFunction { funName, funOutputs } =
     case funOutputs of
         []  -> []
         [_] -> []
-        _   -> EL.typeAlias (typeAliasName funName) (C.normalize funOutputs)
+        _   -> EL.typeAlias (typeAliasName funName) (C.outputRecord <$> C.normalize funOutputs)
 decTypeAlias _ = []
 
 
@@ -117,7 +118,7 @@ decBody isDebug (func@DFunction { funName, funOutputs, funInputs }) = sig <> dec
 
         paramRecord :: Text -> [Text]
         paramRecord = T.callBuilder isDebug
-            (C.methodSignature func)
+            (C.abiMethodSignature func)
             (EL.wrapArray $ Text.intercalate ", " (C.callDataEncodings <$> normalizedInputs))
 
         sig = funcTypeSig func
@@ -154,7 +155,7 @@ decBody _ (event@DEvent { eveName, eveInputs }) = sig <> declaration <> body
                 [] -> [ U.textLowerFirst eveName <> "Event contractAddress = " ]
                 _  -> [ U.textLowerFirst eveName <> "Event contractAddress " <> (Text.intercalate " " (nameAsInput <$> indexedTopics)) <> " = " ]
 
-        body = U.indent 1 <$> (T.logFilterBuilder $ topicsBuilder (C.methodSignature event) indexedTopics)
+        body = U.indent 1 <$> (T.logFilterBuilder $ topicsBuilder (C.abiMethodSignature event) indexedTopics)
 
 decBody _ _ = []
 
@@ -220,7 +221,7 @@ decDecoder _ (DEvent { eveName, eveInputs }) =
 
         body =
             map (U.indent 1)
-            ([ "decode " <> typeAliasName eveName ] <> eventPipelineBuilder (1,0) (C.normalize eveInputs) [])
+            ([ "Decode.succeed " <> typeAliasName eveName ] <> eventPipelineBuilder (1,0) (C.normalize eveInputs) [])
 
         toPipeline tipe n arg = U.indent 1 $
             "|> custom ("
@@ -278,7 +279,7 @@ topicsBuilder :: Text -> [Arg] -> Text
 topicsBuilder sig args =
     let
         defaultTopic =
-            "Just <| U.keccak256 " <> sig
+            "Just <| U.unsafeToHex " <> sig
 
         multiTopic xs =
             defaultTopic : (makeTopic <$> xs)
