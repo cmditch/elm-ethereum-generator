@@ -1,31 +1,31 @@
-module Contracts.ERC20
-    exposing
-        ( allowance
-        , allowed
-        , approve
-        , balanceOf
-        , balances
-        , decimals
-        , name
-        , symbol
-        , totalSupply
-        , transfer
-        , transferFrom
-        , Approval
-        , approvalEvent
-        , approvalDecoder
-        , Transfer
-        , transferEvent
-        , transferDecoder
-        )
+module Contracts.ERC20 exposing
+    ( Approval
+    , Transfer
+    , allowance
+    , allowed
+    , approvalDecoder
+    , approvalEvent
+    , approve
+    , balanceOf
+    , balances
+    , decimals
+    , name
+    , symbol
+    , totalSupply
+    , transfer
+    , transferDecoder
+    , transferEvent
+    , transferFrom
+    )
 
+import Abi.Decode as AbiDecode exposing (abiDecode, andMap, data, toElmDecoder, topic)
+import Abi.Encode as AbiEncode exposing (Encoding(..), abiEncode)
 import BigInt exposing (BigInt)
-import Json.Decode as Decode exposing (Decoder)
-import Json.Decode.Pipeline exposing (custom, decode)
 import Eth.Types exposing (..)
 import Eth.Utils as U
-import Abi.Decode as AbiDecode exposing (abiDecode, andMap, toElmDecoder, topic, data)
-import Abi.Encode as AbiEncode exposing (Encoding(..), abiEncode)
+import Json.Decode as Decode exposing (Decoder)
+import Json.Decode.Pipeline exposing (custom, decode)
+
 
 
 {-
@@ -210,11 +210,11 @@ type alias Approval =
 
 
 approvalEvent : Address -> Maybe Address -> Maybe Address -> LogFilter
-approvalEvent contractAddress owner spender = 
+approvalEvent contractAddress owner spender =
     { fromBlock = LatestBlock
     , toBlock = LatestBlock
     , address = contractAddress
-    , topics = 
+    , topics =
         [ Just <| U.keccak256 "Approval(address,address,uint256)"
         , Maybe.map (abiEncode << AbiEncode.address) owner
         , Maybe.map (abiEncode << AbiEncode.address) spender
@@ -223,7 +223,7 @@ approvalEvent contractAddress owner spender =
 
 
 approvalDecoder : Decoder Approval
-approvalDecoder = 
+approvalDecoder =
     decode Approval
         |> custom (topic 1 AbiDecode.address)
         |> custom (topic 2 AbiDecode.address)
@@ -240,11 +240,11 @@ type alias Transfer =
 
 
 transferEvent : Address -> Maybe Address -> Maybe Address -> LogFilter
-transferEvent contractAddress from to = 
+transferEvent contractAddress from to =
     { fromBlock = LatestBlock
     , toBlock = LatestBlock
     , address = contractAddress
-    , topics = 
+    , topics =
         [ Just <| U.keccak256 "Transfer(address,address,uint256)"
         , Maybe.map (abiEncode << AbiEncode.address) from
         , Maybe.map (abiEncode << AbiEncode.address) to
@@ -253,10 +253,8 @@ transferEvent contractAddress from to =
 
 
 transferDecoder : Decoder Transfer
-transferDecoder = 
+transferDecoder =
     decode Transfer
         |> custom (topic 1 AbiDecode.address)
         |> custom (topic 2 AbiDecode.address)
         |> custom (data 0 AbiDecode.uint)
-
-
