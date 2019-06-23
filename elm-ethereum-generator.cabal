@@ -1,37 +1,103 @@
-name:                elm-ethereum-generator
-version:             2.0.0
--- synopsis:
--- description:
-homepage:            https://github.com/cmditch/elm-ethereum-generator
-license:             BSD3
-license-file:        LICENSE
-author:              Coury Ditch
-maintainer:          Coury Ditch
-copyright:           2018 Coury Ditch
-category:            Web
-build-type:          Simple
-cabal-version:       >=1.10
-extra-source-files:  README.md
+cabal-version: 1.12
 
-executable elm-ethereum-generator
-  hs-source-dirs:      src
-  main-is:             Main.hs
-  default-language:    Haskell2010
-  build-depends:       aeson >= 0.11,
-                       base >=4.2 && <5,
-                       bytestring >= 0.9 && < 0.11,
-                       directory >= 1.0 && < 2.0,
-                       filepath >= 1 && < 2.0,
-                       pretty >= 1.0 && < 2.0,
-                       optparse-applicative >= 0.14 && < 0.15,
-                       ansi-wl-pprint >= 0.6.8.1 && < 0.7,
-                       process,
-                       text >= 1 && < 2,
-                       ilist
+-- This file has been generated from package.yaml by hpack version 0.31.1.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: 6825fadccd61dc550aeb295d149cd54497502f8eb865f355b750ff2499ac7984
 
-  other-modules:       Generator
-                       Generator.Converters
-                       Generator.ElmLang
-                       Generator.Templates
-                       Types
-                       Utils
+name:           elm-ethereum-generator
+version:        3.0.0
+description:    Please see the README on GitHub at <https://github.com/cmditch/elm-ethereum-generator#readme>
+homepage:       https://github.com/cmditch/elm-ethereum-generator#readme
+bug-reports:    https://github.com/cmditch/elm-ethereum-generator/issues
+author:         Coury Ditch
+maintainer:     os@cmdit.ch
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+    ChangeLog.md
+
+source-repository head
+  type: git
+  location: https://github.com/cmditch/elm-ethereum-generator
+
+library
+  exposed-modules:
+      CLI
+      Generator
+      Generator.Converters
+      Generator.ElmLang
+      Generator.Templates
+      Types
+      Utils
+  other-modules:
+      Paths_elm_ethereum_generator
+  hs-source-dirs:
+      src
+  build-depends:
+      aeson
+    , ansi-wl-pprint
+    , base >=4.7 && <5
+    , bytestring
+    , cryptonite
+    , directory
+    , filepath
+    , ilist
+    , optparse-applicative
+    , parsec
+    , pretty
+    , process
+    , text
+  default-language: Haskell2010
+
+executable elm-ethereum-generator-exe
+  main-is: Main.hs
+  other-modules:
+      Paths_elm_ethereum_generator
+  hs-source-dirs:
+      app
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      aeson
+    , ansi-wl-pprint
+    , base >=4.7 && <5
+    , bytestring
+    , cryptonite
+    , directory
+    , elm-ethereum-generator
+    , filepath
+    , ilist
+    , optparse-applicative
+    , parsec
+    , pretty
+    , process
+    , text
+  default-language: Haskell2010
+
+test-suite elm-ethereum-generator-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Paths_elm_ethereum_generator
+  hs-source-dirs:
+      test
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      aeson
+    , ansi-wl-pprint
+    , base >=4.7 && <5
+    , bytestring
+    , cryptonite
+    , directory
+    , elm-ethereum-generator
+    , filepath
+    , ilist
+    , optparse-applicative
+    , parsec
+    , pretty
+    , process
+    , text
+  default-language: Haskell2010
