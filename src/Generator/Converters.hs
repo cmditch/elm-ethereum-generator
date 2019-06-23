@@ -6,68 +6,69 @@ module Generator.Converters where
 
 import           Data.List.Index     (indexed)
 import           Data.Monoid         ((<>))
-import           Data.Text.Lazy      (Text)
-import qualified Data.Text.Lazy      as Text
-
+import           Data.Text           (Text)
+import           Data.Text.Encoding  (encodeUtf8)
 import           Generator.Templates (decodeModuleName, encodeModuleName)
-import           Types
+import           Utils (tshow)
+import           Types (SolidityType (..), Declaration(..), FunctionArg(..), EventArg(..))
+
+import qualified Generator.ElmLang as EL
+import qualified Crypto.Hash as Crypto
 import qualified Utils
+import qualified Data.Text as Text
 
 -- TODO: Support fixed sized array types, e.g. address[3]
 -- TODO: Support all bytes sizes, e.g. bytes32 or bytes5
 
 -- | Convert Solidity type in ABI to elm-ethereum type
-getElmType :: Text -> Text
-getElmType "address"   = "Address"
-getElmType "bool"      = "Bool"
-getElmType "bytes"     = "String"
-getElmType "string"    = "String"
-getElmType tipe | Text.isPrefixOf "uint" tipe && Text.isSuffixOf "[]" tipe = "List BigInt"
-                | Text.isPrefixOf "int" tipe && Text.isSuffixOf "[]" tipe = "List BigInt"
-                | Text.isPrefixOf "bool" tipe && Text.isSuffixOf "[]" tipe = "List Bool"
-                | Text.isPrefixOf "address" tipe && Text.isSuffixOf "[]" tipe = "List Address"
-                | (Text.isPrefixOf "bytes" tipe) && (not $ Text.isSuffixOf "]" tipe) = "String" -- TODO Check for numbers on end instead of (not list)
-                | Text.isPrefixOf "uint" tipe = "BigInt"
-                | Text.isPrefixOf "int" tipe = "BigInt"
-                | Text.isPrefixOf "string" tipe = "String"
-                | otherwise = tipe <> unsupportedError
+toElmType :: SolidityType -> Text
+toElmType SolidityBool             = "Bool"
+toElmType SolidityAddress          = "Address"
+toElmType (SolidityUint _)         = "BigInt"
+toElmType (SolidityInt _)          = "BigInt"
+toElmType SolidityString           = "String"
+toElmType (SolidityBytesN _)       = "Hex"
+toElmType SolidityBytes            = "Hex"
+toElmType (SolidityFixedArray _ t) = "List (" <> toElmType t <> ")"
+toElmType (SolidityArray t)        = "List (" <> toElmType t <> ")"
 
 
 -- | Get elm decoder for solidity type
-getDecoder :: Text -> Text
-getDecoder "address"  = decodeModuleName <> ".address"
-getDecoder "bool"     = decodeModuleName <> ".bool"
-getDecoder "bytes"    = decodeModuleName <> ".dynamicBytes"
-getDecoder "string"   = decodeModuleName <> ".string"
-getDecoder tipe | Text.isPrefixOf "uint" tipe && Text.isSuffixOf "[]" tipe = "(" <> decodeModuleName <> ".dynamicArray " <> decodeModuleName <> ".uint)"
-                | Text.isPrefixOf "int" tipe && Text.isSuffixOf "[]" tipe = "(" <> decodeModuleName <> ".dynamicArray " <> decodeModuleName <> ".int)"
-                | Text.isPrefixOf "bool" tipe && Text.isSuffixOf "[]" tipe = "(" <> decodeModuleName <> ".dynamicArray " <> decodeModuleName <> ".bool)"
-                | Text.isPrefixOf "address" tipe && Text.isSuffixOf "[]" tipe = "(" <> decodeModuleName <> ".dynamicArray " <> decodeModuleName <> ".address)"
-                | (Text.isPrefixOf "bytes" tipe) && (not $ Text.isSuffixOf "]" tipe) = decodeModuleName <> ".staticBytes manually-enter-length-for-now-sry" -- TODO Check for numbers on end instead of (not list)
-                | Text.isPrefixOf "uint" tipe = decodeModuleName <> ".uint"
-                | Text.isPrefixOf "int" tipe = decodeModuleName <> ".int"
-                | Text.isPrefixOf "string" tipe = decodeModuleName <> ".string"
-                | otherwise = tipe <> unsupportedError
+toElmDecoder :: SolidityType -> Text
+toElmDecoder SolidityBool             = decodeModuleName <> ".bool"
+toElmDecoder SolidityAddress          = decodeModuleName <> ".address"
+toElmDecoder (SolidityUint _)         = decodeModuleName <> ".uint"
+toElmDecoder (SolidityInt _)          = decodeModuleName <> ".int"
+toElmDecoder SolidityString           = decodeModuleName <> ".string"
+toElmDecoder (SolidityBytesN n)       = "(" <> decodeModuleName <> ".staticBytes " <> tshow n <> ")"
+toElmDecoder SolidityBytes            = decodeModuleName <> ".dynamicBytes"
+toElmDecoder (SolidityFixedArray n t) = "(" <> decodeModuleName <> ".staticArray " <> tshow n <> " " <> toElmDecoder t <> ")"
+toElmDecoder (SolidityArray t)        = "(" <> decodeModuleName <> ".dynamicArray " <> toElmDecoder t <> ")"
 
 
 -- | Get elm enocder for solidity type
-getEncodingType :: Text -> Text
-getEncodingType "address"  = encodeModuleName <> ".address"
-getEncodingType "bool"     = encodeModuleName <> ".bool"
--- getEncodingType "bytes"    = encodeModuleName <> "."
--- getEncodingType "string"   = encodeModuleName <> ".string"
-getEncodingType tipe | (Text.isPrefixOf "bytes" tipe) && (not $ Text.isSuffixOf "]" tipe) = encodeModuleName <> ".staticBytes manually-enter-length-for-now-sry" -- TODO Check for numbers on end instead of (not list)
-                    --  | Text.isPrefixOf "uint" tipe && Text.isSuffixOf "[]" tipe = "ListE UintE"
-                    --  | Text.isPrefixOf "int" tipe && Text.isSuffixOf "[]" tipe = "ListE IntE"
-                    --  | Text.isPrefixOf "bool" tipe && Text.isSuffixOf "[]" tipe = "ListE BoolE"
-                    --  | Text.isPrefixOf "address" tipe && Text.isSuffixOf "[]" tipe = "ListE AddressE"
-                     | Text.isPrefixOf "uint" tipe = encodeModuleName <> ".uint"
-                     | Text.isPrefixOf "int" tipe = encodeModuleName <> ".int"
-                     | otherwise = tipe <> unsupportedError
+toElmEncoder :: SolidityType -> Text
+toElmEncoder SolidityBool             = encodeModuleName <> ".bool"
+toElmEncoder SolidityAddress          = encodeModuleName <> ".address"
+toElmEncoder (SolidityUint _)         = encodeModuleName <> ".uint"
+toElmEncoder (SolidityInt _)          = encodeModuleName <> ".int"
+toElmEncoder SolidityString           = encodeModuleName <> ".string"
+toElmEncoder (SolidityBytesN n)       = "(" <> encodeModuleName <> ".staticBytes " <> tshow n <> ")"
+toElmEncoder SolidityBytes            = encodeModuleName <> ".bytes"
+toElmEncoder (SolidityFixedArray n t) = "(" <> encodeModuleName <> ".list << List.map " <> toElmEncoder t <> ")"
+toElmEncoder (SolidityArray t)        = "(" <> encodeModuleName <> ".list << List.map " <> toElmEncoder t <> ")" -- "*unsupported-input-type*"
 
-
-unsupportedError :: Text
-unsupportedError = "-UNSUPPORTED-plz-open-github-issue"
+-- | Get elm enocder for solidity type
+toABI :: SolidityType -> Text
+toABI SolidityBool             = "bool"
+toABI SolidityAddress          = "address"
+toABI (SolidityUint n)         = "uint" <> tshow n
+toABI (SolidityInt n)          = "int" <> tshow n
+toABI SolidityString           = "string"
+toABI (SolidityBytesN n)       = "bytes" <> tshow n
+toABI SolidityBytes            = "bytes"
+toABI (SolidityFixedArray n t) = toABI t <> "[" <> tshow n <> "]"
+toABI (SolidityArray t)        = toABI t <> "[]"
 
 
 -- | orders(address,bytes32) == [ AbiEncode.address a, AbiEncode.staticBytes b ]
@@ -79,14 +80,24 @@ callDataEncodings Arg { nameAsInput, encoding } =
 -- |    "transfer(address,uint256)"
 methodSignature :: Declaration -> Text
 methodSignature DFunction { funName, funInputs } =
-    "\"" <> funName <> "("
-    <> Text.intercalate "," (funArgType <$> funInputs)
-    <> ")\""
+    funName <> "("
+    <> Text.intercalate "," (toABI . funArgType <$> funInputs)
+    <> ")"
 methodSignature DEvent { eveName, eveInputs } =
-    "\"" <> eveName <> "("
-    <> Text.intercalate "," (eveArgType <$> eveInputs)
-    <> ")\""
+    eveName <> "("
+    <> Text.intercalate "," (toABI . eveArgType <$> eveInputs)
+    <> ")"
 methodSignature _ = ""
+
+
+-- | "transfer(address,uint256)" -> "a9059cbb"
+abiMethodSignature :: Declaration -> Text
+abiMethodSignature dec@DFunction{} = EL.wrapQuotes . Text.take 8 . Text.pack . show $ decToKeccak dec
+abiMethodSignature dec@DEvent{} = EL.wrapQuotes . Text.pack . show $ decToKeccak dec
+abiMethodSignature _ = ""
+
+decToKeccak :: Declaration -> Crypto.Digest Crypto.Keccak_256
+decToKeccak = Crypto.hash . encodeUtf8 . methodSignature
 
 
 -- |   "name : String"
@@ -124,26 +135,26 @@ instance NormalizedArgs [EventArg] where
     normalize args = map (rename . eventTuple) (indexed args)
 
 
-funcTuple :: (Int, FunctionArg) -> (Int, (Text, Text, Bool))
+funcTuple :: (Int, FunctionArg) -> (Int, (Text, SolidityType, Bool))
 funcTuple (i, FunctionArg { funArgName, funArgType }) = (i, (funArgName, funArgType, False))
 
 
-eventTuple :: (Int, EventArg) -> (Int, (Text, Text, Bool))
+eventTuple :: (Int, EventArg) -> (Int, (Text, SolidityType, Bool))
 eventTuple (i, EventArg { eveArgName, eveArgType, eveArgIndexed }) = (i, (eveArgName, eveArgType, eveArgIndexed))
 
 
-rename :: (Int, (Text, Text, Bool)) -> Arg
+rename :: (Int, (Text, SolidityType, Bool)) -> Arg
 rename (index, (argName, argType, isIndexed)) =
     case argName of
         "" ->  Arg type' nInput nOutput indexT decoder encoder isIndexed
-        _  ->  Arg type' (Utils.sanitizeName argName) (Utils.sanitizeName argName) argName decoder encoder isIndexed
+        _  ->  Arg type' (Utils.cleanPrependingChars argName <> "_") (Utils.cleanPrependingChars argName) argName decoder encoder isIndexed
     where
         indexT  = Text.pack (show index)
-        type'   = getElmType argType
-        nInput  = alphabetInt index
+        type'   = toElmType argType
+        nInput  = alphabetInt index <> "_"
         nOutput = "v" <> indexT
-        decoder = getDecoder argType
-        encoder = getEncodingType argType
+        decoder = toElmDecoder argType
+        encoder = toElmEncoder argType
 
 
 alphabetInt :: Int -> Text
