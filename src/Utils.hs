@@ -11,16 +11,19 @@ module Utils (
     indent,
     paramAlphabet,
     getFileName,
-    sanitizeName
+    cleanPrependingChars,
+    tshow
     ) where
 
 import           Data.Char      (isAlphaNum, isSeparator, toLower, toUpper)
 import           Data.Int       (Int64)
 import           Data.Monoid    ((<>))
-import           Data.Text.Lazy (Text)
-import qualified Data.Text.Lazy as Text
+import           Data.Text      (Text)
+import qualified Data.Text      as Text
 import           Prelude
 
+tshow :: Show a => a -> Text
+tshow = Text.pack . show
 
 -- | Pipeline operator, a la Elm.
 (|>) :: a -> (a -> b) -> b
@@ -57,7 +60,7 @@ minify =
 
 
 -- | Number of 4-space-tabs to indent line
-indent :: Int64 -> Text -> Text
+indent :: Int -> Text -> Text
 indent n t =
     Text.replicate (n * 4) " " <> t
 
@@ -77,13 +80,13 @@ getFileName name = removeExtension $ splitPaths $ Text.pack name
         removeExtension = head . Text.splitOn "."
 
 
+-- | Removes non-alphanumeric prepending characters.
 -- | "_someVar" to "someVar"
-sanitizeName :: Text -> Text
-sanitizeName t =
+cleanPrependingChars :: Text -> Text
+cleanPrependingChars t =
     let
         (x:xs) = Text.unpack t
     in
         if isAlphaNum x
         then t
-        else sanitizeName $ Text.pack xs
-
+        else cleanPrependingChars $ Text.pack xs
