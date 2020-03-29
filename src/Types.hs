@@ -143,15 +143,12 @@ $(deriveJSON
 
 data Declaration
     = DConstructor  { conInputs          :: ![FunctionArg]
-                    , conPayable         :: !Bool
                     , conStateMutability :: !Text
                     }
 
     | DFunction     { funName            :: !Text
-                    , funConstant        :: !Bool
                     , funInputs          :: ![FunctionArg]
                     , funOutputs         :: ![FunctionArg]
-                    , funPayable         :: !Bool
                     , funStateMutability :: !Text
                     }
 
@@ -160,8 +157,7 @@ data Declaration
                     , eveAnonymous       :: !Bool
                     }
 
-    | DFallback     { falPayable         :: !Bool
-                    , falStateMutability :: !Text
+    | DFallback     { falStateMutability :: !Text
                     }
     deriving (Show, Ord, Eq)
 

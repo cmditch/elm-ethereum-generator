@@ -7,7 +7,7 @@ cabal-version: 1.12
 -- hash: 6825fadccd61dc550aeb295d149cd54497502f8eb865f355b750ff2499ac7984
 
 name:           elm-ethereum-generator
-version:        3.0.0
+version:        4.0.0
 description:    Please see the README on GitHub at <https://github.com/cmditch/elm-ethereum-generator#readme>
 homepage:       https://github.com/cmditch/elm-ethereum-generator#readme
 bug-reports:    https://github.com/cmditch/elm-ethereum-generator/issues

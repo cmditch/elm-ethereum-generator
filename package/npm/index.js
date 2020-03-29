@@ -10,6 +10,7 @@ var root = "https://github.com/cmditch/elm-ethereum-generator/releases/download/
   binVersion;
 
 module.exports = binwrap({
+  dirname: __dirname,
   binaries: ["elm-ethereum-generator"],
   urls: {
     "darwin-x64": root + "-mac-x64.tgz"

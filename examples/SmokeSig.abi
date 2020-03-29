@@ -1,0 +1,143 @@
+[
+  {
+    "stateMutability": "nonpayable",
+    "inputs": [
+      {
+        "type": "address",
+        "name": "_token",
+        "internalType": "contract IERC20"
+      }
+    ],
+    "type": "constructor"
+  },
+  {
+    "inputs": [
+      {
+        "indexed": true,
+        "type": "bytes32",
+        "name": "_hash",
+        "internalType": "bytes32"
+      },
+      {
+        "indexed": true,
+        "type": "address",
+        "name": "_from",
+        "internalType": "address"
+      },
+      {
+        "indexed": false,
+        "type": "uint256",
+        "name": "_burnAmount",
+        "internalType": "uint256"
+      },
+      {
+        "indexed": false,
+        "type": "string",
+        "name": "_message",
+        "internalType": "string"
+      }
+    ],
+    "type": "event",
+    "name": "SmokeSignalWithMessage",
+    "anonymous": false
+  },
+  {
+    "inputs": [
+      {
+        "indexed": true,
+        "type": "bytes32",
+        "name": "_hash",
+        "internalType": "bytes32"
+      },
+      {
+        "indexed": true,
+        "type": "address",
+        "name": "_from",
+        "internalType": "address"
+      },
+      {
+        "indexed": false,
+        "type": "uint256",
+        "name": "_burnAmount",
+        "internalType": "uint256"
+      }
+    ],
+    "type": "event",
+    "name": "SmokeSignalWithoutMessage",
+    "anonymous": false
+  },
+  {
+    "stateMutability": "view",
+    "inputs": [
+      {
+        "type": "bytes32",
+        "name": "",
+        "internalType": "bytes32"
+      }
+    ],
+    "type": "function",
+    "name": "amountBurnedForSignal",
+    "outputs": [
+      {
+        "type": "uint256",
+        "name": "",
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "stateMutability": "view",
+    "inputs": [],
+    "type": "function",
+    "name": "token",
+    "outputs": [
+      {
+        "type": "address",
+        "name": "",
+        "internalType": "contract IERC20"
+      }
+    ]
+  },
+  {
+    "stateMutability": "nonpayable",
+    "inputs": [
+      {
+        "type": "string",
+        "name": "_message",
+        "internalType": "string"
+      },
+      {
+        "type": "uint256",
+        "name": "_burnAmount",
+        "internalType": "uint256"
+      }
+    ],
+    "type": "function",
+    "name": "smokeSignalWithMessage",
+    "outputs": [
+      {
+        "type": "bytes32",
+        "name": "",
+        "internalType": "bytes32"
+      }
+    ]
+  },
+  {
+    "stateMutability": "nonpayable",
+    "inputs": [
+      {
+        "type": "bytes32",
+        "name": "_hash",
+        "internalType": "bytes32"
+      },
+      {
+        "type": "uint256",
+        "name": "_burnAmount",
+        "internalType": "uint256"
+      }
+    ],
+    "type": "function",
+    "name": "smokeSignalWithHash",
+    "outputs": []
+  }
+]
