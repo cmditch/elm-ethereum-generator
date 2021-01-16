@@ -117,10 +117,22 @@ parseSolidityType = parse solidityTypeParser "Solidity"
 
 -- | ABI Types and JSON parsers
 
+data ConstructorArg = ConstructorArg
+    { conArgName :: !Text
+    , conArgType :: !SolidityType
+    , conArgInternalType :: !Text
+    } deriving (Show, Eq, Ord)
+
+
+$(deriveJSON
+    (defaultOptions {fieldLabelModifier = toLowerFirst . drop 6})
+    ''ConstructorArg)
+
 
 data FunctionArg = FunctionArg
     { funArgName :: !Text
     , funArgType :: !SolidityType
+    , funArgInternalType :: !Text
     } deriving (Show, Eq, Ord)
 
 
@@ -142,7 +154,7 @@ $(deriveJSON
 
 
 data Declaration
-    = DConstructor  { conInputs          :: ![FunctionArg]
+    = DConstructor  { conInputs          :: ![ConstructorArg]
                     , conStateMutability :: !Text
                     }
 
