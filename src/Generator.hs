@@ -52,13 +52,14 @@ declarationToElm isDebug func = concatMap (<> ["\n"]) $ filter (not . null) $
 decExports :: Declaration -> [Text]
 decExports DFunction { funName, funOutputs } =
     let
-        decoderName = funName <> "Decoder"
+        normalizedFunName = U.textLowerFirst funName
+        decoderName = U.textLowerFirst funName <> "Decoder"
         typeAlias = typeAliasName funName
     in
         case funOutputs of
-            []  -> [ funName ]
-            [_] -> [ funName ]
-            _   -> [ typeAlias, funName, decoderName ]
+            []  -> [ normalizedFunName ]
+            [_] -> [ normalizedFunName ]
+            _   -> [ typeAlias, normalizedFunName, decoderName ]
 
 decExports DEvent { eveName } =
     let
@@ -123,7 +124,7 @@ decBody isDebug (func@DFunction { funName, funOutputs, funInputs }) = sig <> dec
 
         sig = funcTypeSig func
 
-        declaration = [ funName <> inputParamNames <> " =" ]
+        declaration = [ U.textLowerFirst funName <> inputParamNames <> " =" ]
 
         toElmDecoder =
             if isDebug then
@@ -136,7 +137,7 @@ decBody isDebug (func@DFunction { funName, funOutputs, funInputs }) = sig <> dec
                 case C.normalize funOutputs of
                     []  -> paramRecord "Decode.succeed ()"
                     [x] -> paramRecord $ toElmDecoder <> decoder x
-                    _   -> paramRecord $ funName <> "Decoder"
+                    _   -> paramRecord $ U.textLowerFirst funName <> "Decoder"
 
 
 decBody _ (event@DEvent { eveName, eveInputs }) = sig <> declaration <> body
@@ -178,9 +179,9 @@ decDecoder :: Bool -> Declaration -> [Text]
 -}
 decDecoder isDebug (func@DFunction { funName, funOutputs }) =
     let
-        sig = [ funName <> "Decoder : Decoder " <>  typeAliasName funName ]
+        sig = [ U.textLowerFirst funName <> "Decoder : Decoder " <>  typeAliasName funName ]
 
-        declaration = [ funName <> "Decoder =" ]
+        declaration = [ U.textLowerFirst funName <> "Decoder =" ]
 
         decoderPipline = toPipeLineText <$> (C.normalize funOutputs)
 
@@ -261,7 +262,7 @@ decDecoder _ _ = []
 funcTypeSig :: Declaration -> [Text]
 funcTypeSig DFunction { funName, funInputs, funOutputs } = [ typeSig ]
     where
-        typeSig = funName <> " : Address -> " <> Text.intercalate " -> " (inputs <> outputs)
+        typeSig = U.textLowerFirst funName <> " : Address -> " <> Text.intercalate " -> " (inputs <> outputs)
 
         inputs = elmType <$> C.normalize funInputs
 
