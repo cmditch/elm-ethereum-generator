@@ -33,7 +33,7 @@ generate (ContractABI declarations, moduleName) isDebug = Text.unlines (nameAndE
 declName :: Declaration -> Text
 declName DFunction {funName} = funName
 declName DEvent {eveName} = eveName
-declName _ = error "Decl has no name."
+declName _ = ""
 
 declarationToElm :: Bool -> Declaration -> State (Map Text Int) [Text]
 declarationToElm isDebug func = do
