@@ -1,4 +1,3 @@
-{-# LANGUAGE NamedFieldPuns    #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module CLI where
@@ -47,8 +46,8 @@ data Config = Config
     }
 
 parse :: [String] -> Opt.ParserResult Config
-parse args =
-  Opt.execParserPure preferences parser args
+parse =
+  Opt.execParserPure preferences parser
 
 
 preferences :: Opt.ParserPrefs
@@ -103,7 +102,7 @@ helpInfo =
       ]
     where
       top =
-          PP.vcat [ PP.text "elm-ethereum-generator v" PP.<> (PP.text $ showVersion Paths_elm_ethereum_generator.version) ]
+          PP.vcat [ PP.text "elm-ethereum-generator v" PP.<> PP.text (showVersion Paths_elm_ethereum_generator.version) ]
 
       examples =
           linesToDoc

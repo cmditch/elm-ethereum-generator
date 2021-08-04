@@ -21,6 +21,7 @@ dependencies:
 - base >= 4.7 && < 5
 - aeson
 - bytestring
+- containers
 - directory
 - filepath
 - pretty
@@ -31,6 +32,8 @@ dependencies:
 - ilist
 - parsec
 - cryptonite
+- transformers
+- mtl
 
 library:
   source-dirs: src
