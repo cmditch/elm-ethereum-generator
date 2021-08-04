@@ -107,7 +107,7 @@ decTypeAlias _ = []
 
 -}
 decBody :: Bool -> Declaration -> [Text]
-decBody isDebug (func@DFunction { funName, funOutputs, funInputs }) = sig <> declaration <>  body
+decBody isDebug func@DFunction { funName, funOutputs, funInputs } = sig <> declaration <>  body
 
     where
         normalizedInputs = C.normalize funInputs
@@ -128,7 +128,7 @@ decBody isDebug (func@DFunction { funName, funOutputs, funInputs }) = sig <> dec
 
         toElmDecoder =
             if isDebug then
-                "Abi.toElmDecoderWithDebug " <> (C.methodSignature func) <> " "
+                "Abi.toElmDecoderWithDebug " <> C.methodSignature func <> " "
             else
                 "toElmDecoder "
 
@@ -140,23 +140,23 @@ decBody isDebug (func@DFunction { funName, funOutputs, funInputs }) = sig <> dec
                     _   -> paramRecord $ U.textLowerFirst funName <> "Decoder"
 
 
-decBody _ (event@DEvent { eveName, eveInputs }) = sig <> declaration <> body
+decBody _ event@DEvent { eveName, eveInputs } = sig <> declaration <> body
     where
-        indexedTopics = filter (\arg -> isIndexed arg) (C.normalize eveInputs)
+        indexedTopics = filter isIndexed (C.normalize eveInputs)
 
         typeSigHelper x = "Maybe " <> elmType x <> " ->"
 
         sig =
             case indexedTopics of
                 [] -> [ U.textLowerFirst eveName <> "Event : Address -> LogFilter" ]
-                _  -> [ U.textLowerFirst eveName <> "Event : Address -> " <> (Text.unwords $ typeSigHelper <$> indexedTopics) <> " LogFilter" ]
+                _  -> [ U.textLowerFirst eveName <> "Event : Address -> " <> Text.unwords (typeSigHelper <$> indexedTopics) <> " LogFilter" ]
 
         declaration =
             case indexedTopics of
                 [] -> [ U.textLowerFirst eveName <> "Event contractAddress = " ]
-                _  -> [ U.textLowerFirst eveName <> "Event contractAddress " <> (Text.intercalate " " (nameAsInput <$> indexedTopics)) <> " = " ]
+                _  -> [ U.textLowerFirst eveName <> "Event contractAddress " <> Text.intercalate " " (nameAsInput <$> indexedTopics) <> " = " ]
 
-        body = U.indent 1 <$> (T.logFilterBuilder $ topicsBuilder (C.abiMethodSignature event) indexedTopics)
+        body = U.indent 1 <$> T.logFilterBuilder (topicsBuilder (C.abiMethodSignature event) indexedTopics)
 
 decBody _ _ = []
 
@@ -177,13 +177,13 @@ decDecoder :: Bool -> Declaration -> [Text]
             |> andMap uint
             |> toElmDecoder
 -}
-decDecoder isDebug (func@DFunction { funName, funOutputs }) =
+decDecoder isDebug func@DFunction { funName, funOutputs } =
     let
         sig = [ U.textLowerFirst funName <> "Decoder : Decoder " <>  typeAliasName funName ]
 
         declaration = [ U.textLowerFirst funName <> "Decoder =" ]
 
-        decoderPipline = toPipeLineText <$> (C.normalize funOutputs)
+        decoderPipline = toPipeLineText <$> C.normalize funOutputs
 
         toPipeLineText Arg { decoder } =
             "|> andMap " <> decoder
@@ -214,7 +214,7 @@ decDecoder isDebug (func@DFunction { funName, funOutputs }) =
             |> custom (topic 1 uint)
             |> custom (data 0 address)
 -}
-decDecoder _ (DEvent { eveName, eveInputs }) =
+decDecoder _ DEvent { eveName, eveInputs } =
     let
         sig = [ U.textLowerFirst eveName <> "Decoder : Decoder " <> typeAliasName eveName ]
 
@@ -227,7 +227,7 @@ decDecoder _ (DEvent { eveName, eveInputs }) =
         toPipeline tipe n arg = U.indent 1 $
             "|> custom ("
                 <> tipe <> " "
-                <> (Text.pack $ show n)
+                <> Text.pack (show n)
                 <> " "
                 <> decoder arg
                 <> ")"
@@ -238,11 +238,10 @@ decDecoder _ (DEvent { eveName, eveInputs }) =
                 [] ->
                     reverse accum
                 (x:xs) ->
-                    case isIndexed x of
-                        True ->
-                            eventPipelineBuilder (topicIndex + 1, dataIndex) xs (toPipeline "topic" topicIndex x : accum)
-                        False ->
-                            eventPipelineBuilder (topicIndex, dataIndex + 1) xs (toPipeline "data" dataIndex x : accum)
+                    if isIndexed x then
+                        eventPipelineBuilder (topicIndex + 1, dataIndex) xs (toPipeline "topic" topicIndex x : accum)
+                    else
+                        eventPipelineBuilder (topicIndex, dataIndex + 1) xs (toPipeline "data" dataIndex x : accum)
     in
         case eveInputs of
             [] -> []
@@ -272,7 +271,7 @@ funcTypeSig DFunction { funName, funInputs, funOutputs } = [ typeSig ]
                     []  -> "()"
                     [x] -> elmType x
                     _   -> typeAliasName funName
-
+funcTypeSig _ = error "funcTypeSig expects a DFunction."
 
 -- | Generates the "topics" field within a Logfilter
 -- | Comprised of a list of Maybe Strings
@@ -295,6 +294,6 @@ topicsBuilder sig args =
 
 --
 typeAliasName :: Text -> Text
-typeAliasName name  | Text.isSuffixOf "ies" name = (U.textUpperFirst $ Text.dropEnd 1 name) <> "y"
+typeAliasName name  | Text.isSuffixOf "ies" name = U.textUpperFirst (Text.dropEnd 1 name) <> "y"
                     | Text.isSuffixOf "s" name = U.textUpperFirst $ Text.dropEnd 1 name
                     | otherwise = U.textUpperFirst name

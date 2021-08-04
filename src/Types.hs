@@ -8,6 +8,7 @@ import           Data.Aeson         (FromJSON (parseJSON), ToJSON(toJSON), Optio
                                      SumEncoding (TaggedObject), Value (String), defaultOptions)
 import           Data.Aeson.Types   (modifyFailure, typeMismatch)
 import           Data.Aeson.TH      (deriveJSON)
+import           Data.Functor      (($>))
 import           Data.Text          (Text)
 import           Text.Parsec        (ParseError, char, choice, digit, eof,
                                      lookAhead, many1, manyTill, optionMaybe,
@@ -41,7 +42,7 @@ instance FromJSON SolidityType where
             Right t  -> pure t
             Left err -> fail $ "unrecognized JSON ABI Solidity type: " <> show v
     parseJSON invalid =
-            modifyFailure ("parsing SolidityType failed, " <>) $ (typeMismatch "String" invalid)
+            modifyFailure ("parsing SolidityType failed, " <>) $ typeMismatch "String" invalid
 
 numberParser :: Parser Int
 numberParser = read <$> many1 digit
@@ -83,7 +84,7 @@ solidityBasicTypeParser =
 
 expectEnd :: SolidityType -> Parser SolidityType
 expectEnd t =
-    eof *> return t
+    eof $> t
 
 parseFixedArray :: SolidityType -> Parser SolidityType
 parseFixedArray t = do
