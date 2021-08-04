@@ -29,11 +29,18 @@ generate (ContractABI declarations, moduleName) isDebug = Text.unlines (nameAndE
     nameAndExports = T.moduleNameAndExports (U.getFileName moduleName) exportList
     imports = T.imports
 
+overloadedName :: Text -> State (Map Text Int) Text
+overloadedName name = do
+  let name' = U.textLowerFirst name
+  overloads <- get
+  case M.lookup name' overloads of
+    Nothing -> modify (M.insert name' 1) $> name'
+    Just n -> modify (M.insert name' $ n + 1) $> name' <> Text.pack (show n)
 
 declName :: Declaration -> Text
 declName DFunction {funName} = funName
 declName DEvent {eveName} = eveName
-declName _ = ""
+declName _ = " "
 
 declarationToElm :: Bool -> Declaration -> State (Map Text Int) [Text]
 declarationToElm isDebug func = do
@@ -268,13 +275,6 @@ decDecoder _ _ _ = []
 
 -}
 
-overloadedName :: Text -> State (Map Text Int) Text
-overloadedName name = do
-  let name' = U.textLowerFirst name
-  overloads <- get
-  case M.lookup name' overloads of
-    Nothing -> modify (M.insert name' 1) $> name'
-    Just n -> modify (M.insert name' $ n + 1) $> name' <> Text.pack (show n)
 
 -- | Generate Elm type signatures for solidity declaration (funcs, events, constructor)
 funcTypeSig :: Text -> [FunctionArg] -> [FunctionArg] -> [Text]
