@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings, NamedFieldPuns #-}
 
 module CLI where
 
@@ -10,6 +10,7 @@ import           Types
 import           GHC.IO.Encoding              (setLocaleEncoding, utf8)
 
 import qualified Data.ByteString              as B (readFile, writeFile)
+import qualified Data.Text                    as T
 import qualified Data.Text.Encoding           as T (encodeUtf8)
 import qualified Options.Applicative          as Opt
 import qualified System.Environment           as Env
@@ -30,12 +31,19 @@ readConfig config = do
     decodedABI <- eitherDecodeStrict <$> B.readFile (_input config) :: IO (Either String ContractABI)
     case decodedABI of
         Left err          -> putStrLn err
-        Right contractAbi -> writeTheFile outputPath $ generate (contractAbi, outputPath) isDebug
+        Right contractAbi -> writeTheFile outputPath $ generate (filterNoUnderscores contractAbi, outputPath) isDebug
     where
         writeTheFile path content = B.writeFile path $ T.encodeUtf8 content
         outputPath = _output config
         isDebug = _debug config
 
+        filterNoUnderscores :: ContractABI -> ContractABI
+        filterNoUnderscores (ContractABI decls) = ContractABI $ filter noUnderscores decls
+          where
+            noUnderscores :: Declaration -> Bool
+            noUnderscores DFunction{funName} = T.length (T.takeWhile (== '_') funName) < 2
+            noUnderscores DEvent{eveName} = T.length (T.takeWhile (== '_') eveName) < 2
+            noUnderscores _ = True
 
 {- Parse -}
 
