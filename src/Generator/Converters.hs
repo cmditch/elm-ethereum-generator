@@ -29,8 +29,8 @@ toElmType (SolidityInt _)          = "BigInt"
 toElmType SolidityString           = "String"
 toElmType (SolidityBytesN _)       = "Hex"
 toElmType SolidityBytes            = "Hex"
-toElmType (SolidityFixedArray _ t) = "List (" <> toElmType t <> ")"
-toElmType (SolidityArray t)        = "List (" <> toElmType t <> ")"
+toElmType (SolidityFixedArray _ t) = "(List " <> toElmType t <> ")"
+toElmType (SolidityArray t)        = "(List " <> toElmType t <> ")"
 
 
 -- | Get elm decoder for solidity type
